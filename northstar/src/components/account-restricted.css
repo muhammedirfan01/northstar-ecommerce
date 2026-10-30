@@ -1,0 +1,13 @@
+.account-restricted { min-height: 100dvh; display: grid; place-items: center; padding: 28px; background: #faf8f5; color: #202324; }
+.account-restricted-card { width: min(100%, 510px); padding: 44px 36px 24px; border: 1px solid #e7e1d7; border-radius: 18px; background: #fff; text-align: center; box-shadow: 0 16px 54px #24201a08; }
+.account-restricted-brand { margin: 0 0 38px; font: 500 19px Georgia, serif; letter-spacing: 5px; }
+.account-restricted-icon { display: grid; place-items: center; width: 74px; height: 74px; margin: 0 auto 24px; border: 1px solid #ecd9bb; border-radius: 50%; background: #fff6e8; color: #a5702c; }
+.account-restricted h1 { margin: 0 0 16px; font: 400 clamp(27px, 4vw, 34px)/1.2 Georgia, serif; }
+.account-restricted-card > p:not(.account-restricted-brand) { color: #747980; font-size: 14px; line-height: 1.8; }
+.account-restricted-actions { display: grid; gap: 12px; margin-top: 28px; }
+.account-restricted button { min-height: 46px; padding: 12px 18px; border: 1px solid #202324; border-radius: 8px; background: #202324; color: white; font: inherit; font-size: 12px; letter-spacing: .5px; cursor: pointer; }
+.account-restricted button + button { background: white; border-color: #ded9cf; color: #454545; }
+.account-restricted button:disabled { opacity: .6; cursor: wait; }
+.account-restricted button:focus-visible { outline: 2px solid #b88746; outline-offset: 4px; }
+.account-restricted-message { min-height: 24px; margin-bottom: 0; }
+@media (max-width: 480px) { .account-restricted { padding: 18px; } .account-restricted-card { padding: 32px 22px 20px; } }
