@@ -1,52 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import CategoryBar from "./CategoryBar.jsx";
-import ProductCard from "./ProductCard.jsx";
+import ShopProductCard from "./shop/ShopProductCard.jsx";
+import { shopApi } from "../api/shop.js";
 import PromoBanners from "./PromoBanners.jsx";
 import StoreBenefits from "./StoreBenefits.jsx";
 import NewArrivals from "./NewArrivals.jsx";
 import FAQ from "./FAQ.jsx";
-import { useLocation } from "react-router";
-
-const bestSellers = [
-  {
-    id: 1,
-    name: "MacBook Air M2",
-    description: "8GB RAM | 256GB SSD",
-    price: "₹89,990",
-    image: "/laptop.png",
-  },
-  {
-    id: 2,
-    name: "iPhone 15",
-    description: "128GB | Black",
-    price: "₹69,900",
-    image: "/phone.png",
-  },
-  {
-    id: 3,
-    name: "AirPods Pro (2nd Gen)",
-    description: "Active Noise Cancellation",
-    price: "₹24,900",
-    image: "/airpods.png",
-  },
-  {
-    id: 4,
-    name: "Apple Watch Series 9",
-    description: "GPS | 45mm | Midnight",
-    price: "₹41,900",
-    image: "/watch.png",
-  },
-  {
-    id: 5,
-    name: "Sony Alpha 7 IV",
-    description: "33MP | 4K Video",
-    price: "₹1,59,990",
-    image: "/camera.png",
-  },
-];
+import { Link, useLocation } from "react-router";
 
 function Home() {
   const { hash, key: locationKey } = useLocation();
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([
+      shopApi.products({ limit: 4 }, controller.signal),
+      shopApi.categories(controller.signal),
+    ])
+      .then(([result, options]) => {
+        if (!controller.signal.aborted) {
+          setProducts(result.products);
+          setCategories(options.categories);
+        }
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) setError(error.message);
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (hash) {
@@ -54,6 +37,16 @@ function Home() {
     }
   }, [hash, locationKey]);
 
+  function categoryLink(pattern) {
+    const category =
+      categories.find(
+        (category) => !category.parentId && pattern.test(category.name),
+      ) || categories.find((category) => pattern.test(category.name));
+    return category ? `/products?category=${category.id}` : null;
+  }
+  const laptopLink = categoryLink(/^laptops?$/i);
+  const mobileLink = categoryLink(/^(mobiles?|smartphones?|phones?)$/i);
+  const audioLink = categoryLink(/audio|headphone/i);
   return (
     <main>
       <section className="hero">
@@ -63,19 +56,25 @@ function Home() {
           <h1>Power Meets Performance</h1>
 
           <p className="hero-description">
-            Explore the latest laptops, smartphones, and accessories
-            from top brands. Built for work, play, and everything
-            in between.
+            Explore the latest laptops, smartphones, and accessories from top
+            brands. Built for work, play, and everything in between.
           </p>
 
           <div className="hero-actions">
-            <a className="shop-button" href="#">
+            <Link className="shop-button" to="/products">
               Shop Now →
-            </a>
+            </Link>
 
-            <a className="explore-link" href="#">
+            <Link
+              className="explore-link"
+              to={laptopLink || "#"}
+              aria-disabled={!laptopLink}
+              onClick={(event) => {
+                if (!laptopLink) event.preventDefault();
+              }}
+            >
               Explore Laptops →
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -86,32 +85,34 @@ function Home() {
         />
       </section>
 
-      <CategoryBar />
+      <CategoryBar categories={categories} />
 
       <section className="best-sellers" id="best-sellers">
         <div className="section-heading">
           <div>
             <p className="section-label">Featured products</p>
-            <h2>Best Sellers</h2>
+            <h2>Explore Our Collection</h2>
           </div>
-          <a href="#">View All →</a>
+          <a href="/products">View All →</a>
         </div>
-        <div className="product-grid">
-          {bestSellers.map((product) => (
-            <ProductCard
-              key={product.id}
-              name={product.name}
-              description={product.description}
-              price={product.price}
-              image={product.image}
-            />
+        {error && (
+          <p role="alert" className="shop-error">
+            {error} <Link to="/products">Browse products</Link>
+          </p>
+        )}
+        <div className="shop-grid">
+          {products.map((product) => (
+            <ShopProductCard key={product.id} product={product} />
           ))}
         </div>
+        {!error && !products.length && (
+          <p className="shop-help">New products are coming soon.</p>
+        )}
       </section>
 
-      <PromoBanners />
+      <PromoBanners mobileLink={mobileLink} audioLink={audioLink} />
       <StoreBenefits />
-      <NewArrivals products={bestSellers.slice(0, 4)} />
+      <NewArrivals products={products.slice(0, 4)} />
       <FAQ />
     </main>
   );

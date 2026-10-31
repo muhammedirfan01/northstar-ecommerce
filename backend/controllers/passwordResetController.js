@@ -159,7 +159,7 @@ export async function resendRecovery(req, res) {
       },
       $inc: { resendCount: 1 }
     },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!updated) {
@@ -195,7 +195,7 @@ export async function verifyRecovery(req, res) {
     {
       $inc: { attempts: 1 }
     },
-    { new: true }
+    { returnDocument: "after" }
   ).select("+otpHash");
 
   if (!record?.userId) {
@@ -231,7 +231,7 @@ export async function verifyRecovery(req, res) {
         resetExpiresAt: new Date(Date.now() + OTP_TIME)
       }
     },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!verified) {
@@ -278,7 +278,7 @@ export async function resetPassword(req, res) {
       $set: { passwordHash },
       $inc: { authVersion: 1 }
     },
-    { new: true, runValidators: true }
+    { returnDocument: "after", runValidators: true }
   );
 
   if (!user) {

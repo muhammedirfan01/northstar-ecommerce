@@ -21,7 +21,7 @@ function timing(record) {
     expiresAt: record.expiresAt,
     expiresIn: 300,
     resendAfter: 60,
-    sent: true
+    sent: true,
   };
 }
 
@@ -32,9 +32,10 @@ function makeCode(record, type) {
 }
 
 async function sendCodes(record, currentCode, newCode) {
-  const purpose = record.purpose === "email-change"
-    ? "email-change-current"
-    : "password-change";
+  const purpose =
+    record.purpose === "email-change"
+      ? "email-change-current"
+      : "password-change";
 
   await sendOtpEmail(record.currentEmail, currentCode, purpose);
 
@@ -49,10 +50,7 @@ async function startVerification(req, res, purpose, newEmail, passwordHash) {
   await ProfileVerification.deleteOne({
     userId: req.user.id,
     purpose,
-    $or: [
-      { usedAt: { $ne: null } },
-      { resendAvailableAt: { $lte: now } }
-    ]
+    $or: [{ usedAt: { $ne: null } }, { resendAvailableAt: { $lte: now } }],
   });
 
   const record = new ProfileVerification({
@@ -63,7 +61,7 @@ async function startVerification(req, res, purpose, newEmail, passwordHash) {
     pendingPasswordHash: passwordHash,
     authVersion: req.user.authVersion ?? 0,
     expiresAt: new Date(Date.now() + OTP_TIME),
-    resendAvailableAt: new Date(Date.now() + COOLDOWN)
+    resendAvailableAt: new Date(Date.now() + COOLDOWN),
   });
 
   const current = makeCode(record, "current");
@@ -86,7 +84,7 @@ async function startVerification(req, res, purpose, newEmail, passwordHash) {
     if (record._id) {
       await ProfileVerification.deleteOne({
         _id: record._id,
-        currentCodeHash: record.currentCodeHash
+        currentCodeHash: record.currentCodeHash,
       });
     }
 
@@ -96,7 +94,7 @@ async function startVerification(req, res, purpose, newEmail, passwordHash) {
   return res.status(202).json({
     success: true,
     message: "Verification codes sent.",
-    data: timing(record)
+    data: timing(record),
   });
 }
 
@@ -109,16 +107,16 @@ async function verifyCodes(req, purpose) {
     authVersion: req.user.authVersion ?? 0,
     usedAt: null,
     expiresAt: { $gt: new Date() },
-    createdAt: { $gt: new Date(Date.now() - MAX_AGE) }
+    createdAt: { $gt: new Date(Date.now() - MAX_AGE) },
   };
 
   const record = await ProfileVerification.findOneAndUpdate(
     {
       ...filter,
-      attempts: { $lt: 5 }
+      attempts: { $lt: 5 },
     },
     { $inc: { attempts: 1 } },
-    { new: true }
+    { returnDocument: "after" },
   ).select("+currentCodeHash +newCodeHash +pendingPasswordHash");
 
   if (!record) return null;
@@ -126,7 +124,7 @@ async function verifyCodes(req, purpose) {
   const currentHash = hashOtp(
     record.id,
     `${purpose}:current`,
-    req.body.currentCode || req.body.code
+    req.body.currentCode || req.body.code,
   );
 
   if (!matchesOtpHash(record.currentCodeHash, currentHash)) {
@@ -134,11 +132,7 @@ async function verifyCodes(req, purpose) {
   }
 
   if (purpose === "email-change") {
-    const newHash = hashOtp(
-      record.id,
-      `${purpose}:new`,
-      req.body.newCode
-    );
+    const newHash = hashOtp(record.id, `${purpose}:new`, req.body.newCode);
 
     if (!matchesOtpHash(record.newCodeHash, newHash)) {
       return null;
@@ -150,10 +144,10 @@ async function verifyCodes(req, purpose) {
     {
       ...filter,
       currentCodeHash: record.currentCodeHash,
-      newCodeHash: record.newCodeHash
+      newCodeHash: record.newCodeHash,
     },
     { $set: { usedAt: new Date() } },
-    { new: true }
+    { returnDocument: "after" },
   ).select("+pendingPasswordHash");
 }
 
@@ -193,14 +187,14 @@ export async function verifyEmailChange(req, res) {
       activeAccountFilter(
         req.user.id,
         record.currentEmail,
-        req.user.authVersion
+        req.user.authVersion,
       ),
       {
         $set: { email: record.newEmail },
-        $inc: { authVersion: 1 }
+        $inc: { authVersion: 1 },
       },
-      { new: true, runValidators: true }
-    ).select("+passwordHash +googleId");
+      { returnDocument: "after", runValidators: true },
+    ).select("+passwordHash +googleId +authVersion");
   } catch (error) {
     if (error.code === 11000) {
       return fail(res, "Email already in use.", 409);
@@ -215,7 +209,7 @@ export async function verifyEmailChange(req, res) {
   return res.json({
     success: true,
     message: "Email updated.",
-    data: { user: publicUser(user), verified: true }
+    data: { user: publicUser(user), verified: true },
   });
 }
 
@@ -225,7 +219,7 @@ export async function requestPasswordChange(req, res) {
 
   if (
     req.user.passwordHash &&
-    await verifyPassword(req.user.passwordHash, newPassword)
+    (await verifyPassword(req.user.passwordHash, newPassword))
   ) {
     return fail(res, "Choose a different password.");
   }
@@ -237,7 +231,7 @@ export async function requestPasswordChange(req, res) {
     res,
     "password-change",
     undefined,
-    passwordHash
+    passwordHash,
   );
 }
 
@@ -250,17 +244,13 @@ export async function changePassword(req, res) {
   }
 
   const user = await User.findOneAndUpdate(
-    activeAccountFilter(
-      req.user.id,
-      req.user.email,
-      req.user.authVersion
-    ),
+    activeAccountFilter(req.user.id, req.user.email, req.user.authVersion),
     {
       $set: { passwordHash: record.pendingPasswordHash },
-      $inc: { authVersion: 1 }
+      $inc: { authVersion: 1 },
     },
-    { new: true, runValidators: true }
-  ).select("+passwordHash +googleId");
+    { returnDocument: "after", runValidators: true },
+  ).select("+passwordHash +googleId +authVersion");
 
   if (!user) return fail(res, "Account changed. Try again.", 409);
 
@@ -269,7 +259,7 @@ export async function changePassword(req, res) {
   return res.json({
     success: true,
     message: "Password updated.",
-    data: { user: publicUser(user), verified: true }
+    data: { user: publicUser(user), verified: true },
   });
 }
 
@@ -283,20 +273,20 @@ export async function resendSecurityCode(req, res) {
     usedAt: null,
     attempts: { $lt: 5 },
     resendCount: { $lt: 3 },
-    createdAt: { $gt: new Date(Date.now() - MAX_AGE + OTP_TIME) }
+    createdAt: { $gt: new Date(Date.now() - MAX_AGE + OTP_TIME) },
   }).select("+currentCodeHash +newCodeHash");
 
   if (!record) return fail(res, "Verification expired. Start again.");
 
   const wait = Math.ceil(
-    (record.resendAvailableAt.getTime() - Date.now()) / 1000
+    (record.resendAvailableAt.getTime() - Date.now()) / 1000,
   );
 
   if (wait > 0) {
     return res.status(429).json({
       success: false,
       message: `Wait ${wait} seconds.`,
-      data: { resendAfter: wait }
+      data: { resendAfter: wait },
     });
   }
 
@@ -327,18 +317,18 @@ export async function resendSecurityCode(req, res) {
       currentCodeHash: oldCurrentHash,
       newCodeHash: oldNewHash,
       resendAvailableAt: { $lte: new Date() },
-      createdAt: { $gt: new Date(Date.now() - MAX_AGE + OTP_TIME) }
+      createdAt: { $gt: new Date(Date.now() - MAX_AGE + OTP_TIME) },
     },
     {
       $set: {
         currentCodeHash: current.hash,
         newCodeHash: next?.hash,
         expiresAt: new Date(Date.now() + OTP_TIME),
-        resendAvailableAt: new Date(Date.now() + COOLDOWN)
+        resendAvailableAt: new Date(Date.now() + COOLDOWN),
       },
-      $inc: { resendCount: 1 }
+      $inc: { resendCount: 1 },
     },
-    { new: true }
+    { returnDocument: "after" },
   );
 
   if (!updated) return fail(res, "Request changed. Try again.", 409);
@@ -352,6 +342,6 @@ export async function resendSecurityCode(req, res) {
   return res.json({
     success: true,
     message: "New verification codes sent.",
-    data: timing(updated)
+    data: timing(updated),
   });
 }

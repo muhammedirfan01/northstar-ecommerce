@@ -12,7 +12,7 @@ export function publicUser(user) {
     profileImage: user.profileImage || "",
     isEmailVerified: user.isEmailVerified,
     isGoogleAccount: Boolean(user.googleId),
-    hasPassword: Boolean(user.passwordHash)
+    hasPassword: Boolean(user.passwordHash),
   };
 }
 
@@ -25,19 +25,20 @@ export async function requireAuth(req, res, next) {
 
     return res.status(401).json({
       success: false,
-      message: "Please sign in."
+      message: "Please sign in.",
     });
   }
 
-  const user = await User.findById(token.userId)
-    .select("+passwordHash +authVersion +googleId");
+  const user = await User.findById(token.userId).select(
+    "+passwordHash +authVersion +googleId",
+  );
 
   if (!user || !user.isEmailVerified) {
     clearAuthCookie(res);
 
     return res.status(401).json({
       success: false,
-      message: "Please sign in again."
+      message: "Please sign in again.",
     });
   }
 
@@ -45,10 +46,20 @@ export async function requireAuth(req, res, next) {
     return res.status(403).json({
       success: false,
       code: user.deletedAt ? "ACCOUNT_DELETED" : "ACCOUNT_BLOCKED",
-      message: "Your account is restricted."
+      message: "Your account is restricted.",
     });
   }
 
+  // Password changes and account restrictions increase this session counter.
+  if ((token.authVersion ?? 0) !== (user.authVersion ?? 0)) {
+    clearAuthCookie(res);
+    return res
+      .status(401)
+      .json({
+        success: false,
+        message: "Your session has changed. Please sign in again.",
+      });
+  }
   req.user = user;
   next();
 }
@@ -58,7 +69,7 @@ export function requireAdmin(req, res, next) {
   if (req.user?.role !== "admin") {
     return res.status(403).json({
       success: false,
-      message: "Admin access required."
+      message: "Admin access required.",
     });
   }
 
@@ -67,7 +78,12 @@ export function requireAdmin(req, res, next) {
 // Google manages the email and password for Google accounts.
 export function requirePasswordAccount(req, res, next) {
   if (req.user.googleId) {
-    return res.status(403).json({ success: false, message: "Manage your email and password in your Google account." });
+    return res
+      .status(403)
+      .json({
+        success: false,
+        message: "Manage your email and password in your Google account.",
+      });
   }
   next();
 }

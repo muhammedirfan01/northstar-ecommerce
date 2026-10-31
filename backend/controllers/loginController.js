@@ -10,17 +10,19 @@ const dummyHash = hashPassword(randomBytes(32).toString("hex"));
 export async function startLogin(req, res) {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select("+passwordHash +googleId");
+  const user = await User.findOne({ email }).select(
+    "+passwordHash +googleId +authVersion",
+  );
 
   const isValid = await verifyPassword(
-    user?.passwordHash || await dummyHash,
-    password
+    user?.passwordHash || (await dummyHash),
+    password,
   );
 
   if (!user?.passwordHash || !isValid) {
     return res.status(401).json({
       success: false,
-      message: "Invalid email or password"
+      message: "Invalid email or password",
     });
   }
 
@@ -28,14 +30,14 @@ export async function startLogin(req, res) {
     return res.status(403).json({
       success: false,
       code: user.deletedAt ? "ACCOUNT_DELETED" : "ACCOUNT_BLOCKED",
-      message: "Your account is restricted"
+      message: "Your account is restricted",
     });
   }
 
   if (!user.isEmailVerified) {
     return res.status(403).json({
       success: false,
-      message: "Please verify your email"
+      message: "Please verify your email",
     });
   }
 
@@ -43,7 +45,7 @@ export async function startLogin(req, res) {
 
   return res.json({
     success: true,
-    data: { user: publicUser(user) }
+    data: { user: publicUser(user) },
   });
 }
 
@@ -51,7 +53,7 @@ export async function startLogin(req, res) {
 export function currentUser(req, res) {
   return res.json({
     success: true,
-    data: { user: publicUser(req.user) }
+    data: { user: publicUser(req.user) },
   });
 }
 
@@ -61,7 +63,6 @@ export function logout(req, res) {
 
   return res.json({
     success: true,
-    message: "Logged out successfully"
+    message: "Logged out successfully",
   });
 }
-

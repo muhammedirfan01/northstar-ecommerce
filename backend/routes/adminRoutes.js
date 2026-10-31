@@ -1,12 +1,20 @@
 import { Router } from "express";
+import { dashboardSummary } from "../services/dashboardService.js";
+import catalogAdminRoutes from "./catalogAdminRoutes.js";
 import { requireAuth, requireAdmin, publicUser } from "../middlewares/auth.js";
 import {
-  getCustomers, setCustomerStatus,
-  getCustomer, getCustomerPhoto, deleteCustomer, restoreCustomer,
+  getCustomers,
+  setCustomerStatus,
+  getCustomer,
+  getCustomerPhoto,
+  deleteCustomer,
+  restoreCustomer,
 } from "../controllers/adminController.js";
 import {
-  validateCustomerQuery, validateCustomerStatus,
-  validateCustomerId, validateCustomerPhoto,
+  validateCustomerQuery,
+  validateCustomerStatus,
+  validateCustomerId,
+  validateCustomerPhoto,
 } from "../middlewares/validateAdmin.js";
 
 const router = Router();
@@ -16,16 +24,25 @@ router.use((req, res, next) => {
 });
 router.use(requireAuth, requireAdmin);
 router.get("/me", (req, res) =>
-  res.json({ success: true, data: { user: publicUser(req.user) } })
+  res.json({ success: true, data: { user: publicUser(req.user) } }),
+);
+router.get("/dashboard", async (_req, res) =>
+  res.json({ success: true, data: await dashboardSummary() }),
 );
 router.get("/customers", validateCustomerQuery, getCustomers);
 router.get("/customers/:id", validateCustomerId, getCustomer);
-router.get("/customers/:id/photo", validateCustomerId, validateCustomerPhoto, getCustomerPhoto);
+router.get(
+  "/customers/:id/photo",
+  validateCustomerId,
+  validateCustomerPhoto,
+  getCustomerPhoto,
+);
 router.delete("/customers/:id", validateCustomerId, deleteCustomer);
 router.post("/customers/:id/restore", validateCustomerId, restoreCustomer);
 router.patch(
   "/customers/:id/status",
   validateCustomerStatus,
-  setCustomerStatus
+  setCustomerStatus,
 );
+router.use(catalogAdminRoutes);
 export default router;

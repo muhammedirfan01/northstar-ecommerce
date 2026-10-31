@@ -1,0 +1,10 @@
+# Local environment settings and credentials
+.env
+.env.*
+
+# Installed packages and generated files
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.log

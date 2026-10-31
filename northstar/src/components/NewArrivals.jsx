@@ -1,24 +1,17 @@
-import ProductCard from "./ProductCard.jsx";
+import ShopProductCard from "./shop/ShopProductCard.jsx";
 
-export default function NewArrivals({ products, onView }){
+export default function NewArrivals({ products }) {
   return (
     <section className="new-arrivals">
       <div className="section-heading">
         <h2>New Arrivals &amp; Innovations</h2>
 
-        <a href="#">View All →</a>
+        <a href="/products">View All →</a>
       </div>
 
       <div className="product-grid arrivals-grid">
         {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            name={product.name}
-            description={product.description}
-            price={product.price}
-            image={product.image}
-             onView={() => onView(product.id)}
-          />
+          <ShopProductCard key={product.id} product={product} />
         ))}
       </div>
     </section>

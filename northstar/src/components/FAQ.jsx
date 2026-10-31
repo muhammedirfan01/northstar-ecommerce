@@ -18,7 +18,8 @@ const questions = [
     question: "Do products come with a warranty?",
     answer:
       "Warranty coverage varies by brand and product. Check the product page for the warranty period, coverage, and claim instructions.",
-  },{
+  },
+  {
     question: "How can I track my order?",
     answer:
       "Once your order has shipped, open its details under My Orders to find the available tracking information.",
@@ -27,7 +28,7 @@ const questions = [
 
 export default function FAQ() {
   return (
-    <section className="faq-section" aria-labelledby="faq-heading">
+    <section id="support" className="faq-section" aria-labelledby="faq-heading">
       <div className="section-heading">
         <h2 id="faq-heading">Frequently Asked Questions</h2>
       </div>

@@ -1,0 +1,54 @@
+.review-photos,
+.review-photo-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.review-photos a {
+  display: block;
+}
+.review-photos img,
+.review-photo-preview img {
+  display: block;
+  width: 82px;
+  height: 82px;
+  border: 1px solid #e3dfd5;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.review-photo-input {
+  min-width: 0;
+  padding: 0;
+  margin: 8px 0 18px;
+  border: 0;
+}
+.review-photo-input legend {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.review-photo-input .shop-help {
+  margin: 8px 0 12px;
+}
+.review-photo-upload {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.review-photo-upload input {
+  max-width: 100%;
+}
+.review-photo-preview button {
+  padding: 6px 0;
+  background: none;
+  border: 0;
+  color: #9e303a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.review-photo-input:disabled button {
+  cursor: default;
+  opacity: 0.6;
+}

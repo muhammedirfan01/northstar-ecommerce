@@ -1,11 +1,11 @@
-export default function PromoBanners() {
+import { Link } from "react-router";
+
+export default function PromoBanners({ mobileLink, audioLink }) {
   return (
     <section className="promo-banners" aria-label="Special offers">
       <article className="promo-card promo-dark">
         <div>
-          <span className="promo-label">
-            FLASH SALE · FLAT 50% OFF
-          </span>
+          <span className="promo-label">FLASH SALE · FLAT 50% OFF</span>
 
           <h2>
             Upgrade Your
@@ -15,9 +15,16 @@ export default function PromoBanners() {
 
           <p>Get up to 25% off on the latest models.</p>
 
-          <a className="promo-button" href="#">
+          <Link
+            className="promo-button"
+            to={mobileLink || "#"}
+            aria-disabled={!mobileLink}
+            onClick={(event) => {
+              if (!mobileLink) event.preventDefault();
+            }}
+          >
             Shop Mobiles →
-          </a>
+          </Link>
         </div>
 
         <img
@@ -30,9 +37,7 @@ export default function PromoBanners() {
 
       <article className="promo-card">
         <div>
-          <span className="promo-label">
-            LIMITED OFFER: 50% OFF
-          </span>
+          <span className="promo-label">LIMITED OFFER: 50% OFF</span>
 
           <h2>
             Immersive Sound
@@ -42,9 +47,16 @@ export default function PromoBanners() {
 
           <p>Top brands. Unbeatable quality.</p>
 
-          <a className="promo-button" href="#">
+          <Link
+            className="promo-button"
+            to={audioLink || "#"}
+            aria-disabled={!audioLink}
+            onClick={(event) => {
+              if (!audioLink) event.preventDefault();
+            }}
+          >
             Shop Headphones →
-          </a>
+          </Link>
         </div>
 
         <img

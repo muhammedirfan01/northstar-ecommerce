@@ -1,6 +1,7 @@
 import { request } from "./auth.js";
 
 export const adminApi = {
+  dashboard: (signal) => request("/admin/dashboard", { signal }),
   customers: (query, signal) =>
     request(`/admin/customers?${new URLSearchParams(query)}`, { signal }),
   customer: (id, signal) => request(`/admin/customers/${id}`, { signal }),

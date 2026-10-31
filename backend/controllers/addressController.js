@@ -40,7 +40,7 @@ async function saveAddresses(req, res, user, status, message) {
   const updated = await User.findOneAndUpdate(filter, {
     $set: { addresses: user.addresses, defaultAddressId: user.defaultAddressId },
     $inc: { addressVersion: 1 },
-  }, { new: true, runValidators: true }).select(fields).lean();
+  }, { returnDocument: "after", runValidators: true }).select(fields).lean();
 
   if (!updated) return fail(res, 409, "Your account or addresses changed. Please reload.");
   return res.status(status).json({ success: true, message, data: formatAddresses(updated) });

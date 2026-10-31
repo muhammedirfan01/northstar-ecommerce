@@ -15,18 +15,18 @@ export async function googleSignIn(req, res) {
     if (!code || typeof code !== "string") {
       return res.status(400).json({
         success: false,
-        message: "Google authorization code is required."
+        message: "Google authorization code is required.",
       });
     }
 
     const { tokens } = await googleClient.getToken({
       code,
-      redirect_uri: new URL(process.env.CLIENT_URL).origin
+      redirect_uri: new URL(process.env.CLIENT_URL).origin,
     });
 
     const ticket = await googleClient.verifyIdToken({
       idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const profile = ticket.getPayload();
@@ -34,22 +34,24 @@ export async function googleSignIn(req, res) {
     if (!profile?.sub || !profile.email || !profile.email_verified) {
       return res.status(401).json({
         success: false,
-        message: "Google verification failed."
+        message: "Google verification failed.",
       });
     }
 
-    let user = await User.findOne({ googleId: profile.sub })
-      .select("+googleId +passwordHash");
+    let user = await User.findOne({ googleId: profile.sub }).select(
+      "+googleId +passwordHash +authVersion",
+    );
 
     if (!user) {
       const existingUser = await User.findOne({
-        email: profile.email.toLowerCase()
+        email: profile.email.toLowerCase(),
       });
 
       if (existingUser) {
         return res.status(409).json({
           success: false,
-          message: "This email is already registered. Use your existing login method."
+          message:
+            "This email is already registered. Use your existing login method.",
         });
       }
 
@@ -59,7 +61,7 @@ export async function googleSignIn(req, res) {
         googleId: profile.sub,
         isEmailVerified: true,
         role: "customer",
-        profileImage: profile.picture || ""
+        profileImage: profile.picture || "",
       });
     }
 
@@ -67,7 +69,7 @@ export async function googleSignIn(req, res) {
       return res.status(403).json({
         success: false,
         code: user.deletedAt ? "ACCOUNT_DELETED" : "ACCOUNT_BLOCKED",
-        message: "Your account is restricted."
+        message: "Your account is restricted.",
       });
     }
 
@@ -76,21 +78,23 @@ export async function googleSignIn(req, res) {
     return res.json({
       success: true,
       message: "Google login successful.",
-      data: { user: publicUser(user) }
+      data: { user: publicUser(user) },
     });
-
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: "An account with this email already exists."
+        message: "An account with this email already exists.",
       });
     }
 
-    console.error("Google sign-in failed:", error.response?.data?.error || error.code || error.name);
+    console.error(
+      "Google sign-in failed:",
+      error.response?.data?.error || error.code || error.name,
+    );
     return res.status(401).json({
       success: false,
-      message: "Google sign-in failed."
+      message: "Google sign-in failed.",
     });
   }
 }

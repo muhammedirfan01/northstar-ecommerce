@@ -1350,3 +1350,12 @@ gap: 12px;
 summary.profile-button { list-style: none; }
 summary.profile-button::-webkit-details-marker { display: none; }
 
+
+.category-option.category-suboption {
+  padding-left: 26px;
+  font-size: 12px;
+  color: #74796c;
+}
+
+.footer-unavailable { font-size: 13px; color: #828078; }
+

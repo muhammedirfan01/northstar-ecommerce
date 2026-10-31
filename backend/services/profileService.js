@@ -22,7 +22,7 @@ export async function saveProfile(account, details, file) {
   const user = await User.findOneAndUpdate(
     activeAccountFilter(account.id, account.email, account.authVersion),
     { $set: changes },
-    { new: true, runValidators: true }
+    { returnDocument: "after", runValidators: true }
   ).select("+passwordHash +googleId");
 
   if (!user) {

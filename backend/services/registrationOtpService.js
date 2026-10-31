@@ -24,7 +24,7 @@ export async function verifyRegistration(body) {
   const record = await RegistrationOtp.findOneAndUpdate(
     { ...filter, attempts: { $lt: 5 } },
     { $inc: { attempts: 1 } },
-    { new: true }
+    { returnDocument: "after" }
   ).select("+otpHash");
 
   if (!record) {
@@ -41,7 +41,7 @@ export async function verifyRegistration(body) {
   const verified = await RegistrationOtp.findOneAndUpdate(
     { ...filter, otpHash: record.otpHash },
     { $set: { usedAt: new Date() } },
-    { new: true }
+    { returnDocument: "after" }
   ).select("+pendingRegistration");
 
   if (!verified?.pendingRegistration) {
@@ -130,7 +130,7 @@ export async function resendRegistrationOtp(body) {
       },
       $inc: { resendCount: 1 }
     },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!updated) {
