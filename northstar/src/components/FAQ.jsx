@@ -1,28 +1,23 @@
 const questions = [
   {
-    question: "When will my order arrive, and how much does delivery cost?",
-    answer:
-      "Delivery estimates and applicable shipping charges are shown at checkout based on your delivery address.",
+    question: "How can I find a product?",
+    answer: "Search the catalog, filter by category and price range, and sort the results by price or name.",
   },
   {
-    question: "Can I return or replace a product?",
-    answer:
-      "Return and replacement eligibility depends on the product and its condition. Please check our Return Policy for the applicable conditions and deadlines before purchasing.",
+    question: "Where can I see product details?",
+    answer: "Open a product to view its images, description, price, highlights, and current stock availability.",
   },
   {
-    question: "What should I do if my product arrives damaged or incorrect?",
-    answer:
-      "Contact our support team with your order number and clear photos of the product and packaging. Keep the original packaging while we review your request.",
+    question: "Can I save products for later?",
+    answer: "Use the wishlist button on a product. Adding a saved product to your cart removes it from your wishlist.",
   },
   {
-    question: "Do products come with a warranty?",
-    answer:
-      "Warranty coverage varies by brand and product. Check the product page for the warranty period, coverage, and claim instructions.",
+    question: "Why can't I increase an item's quantity?",
+    answer: "Cart quantities are limited by current stock and the maximum quantity allowed for each item.",
   },
   {
-    question: "How can I track my order?",
-    answer:
-      "Once your order has shipped, open its details under My Orders to find the available tracking information.",
+    question: "Why did my cart total change?",
+    answer: "The cart uses current product prices. Checkout review checks prices and stock again so you can review any changes.",
   },
 ];
 

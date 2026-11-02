@@ -1,12 +1,13 @@
 import User from "../models/User.js";
-import Order from "../models/Order.js";
+import Product from "../models/Product.js";
+import Category from "../models/Category.js";
 
 export async function dashboardSummary() {
-  const [customers, orders, fulfilled, pending] = await Promise.all([
+  const [customers, products, categories, publishedProducts] = await Promise.all([
     User.countDocuments({ role: "customer", deletedAt: null }),
-    Order.countDocuments({}),
-    Order.countDocuments({ status: "delivered" }),
-    Order.countDocuments({ status: { $in: ["pending", "confirmed"] } }),
+    Product.countDocuments({}),
+    Category.countDocuments({}),
+    Product.countDocuments({ isPublished: true, isListed: true }),
   ]);
-  return { customers, orders, fulfilled, pending };
+  return { customers, products, categories, publishedProducts };
 }

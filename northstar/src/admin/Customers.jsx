@@ -219,8 +219,6 @@ export default function Customers() {
               <tr>
                 <th scope="col">Customer</th>
                 <th scope="col">Status</th>
-                <th scope="col">Orders</th>
-                <th scope="col">Returned orders</th>
                 <th scope="col">Joined date</th>
                 <th scope="col" className="cm-actions-heading">Actions</th>
               </tr>
@@ -235,8 +233,6 @@ export default function Customers() {
                     </div>
                   </td>
                   <td><span className={`cm-status ${customer.isBlocked ? "is-blocked" : "is-active"}`}>● {customer.isBlocked ? "Blocked" : "Active"}</span></td>
-                  <td>{customer.totalOrders}</td>
-                  <td>{customer.returnedOrders}</td>
                   <td className="cm-date">{new Date(customer.createdAt).toLocaleDateString("en-IN", { timeZone: "UTC" })}</td>
                   <td>
                     <div className="cm-row-actions">

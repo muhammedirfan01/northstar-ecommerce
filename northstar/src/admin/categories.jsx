@@ -288,7 +288,7 @@ export default function Categories() {
           }
           description={
             action.kind === "delete"
-              ? `Permanently delete “${action.category.name}”, its ${action.category.productCount} products and ${action.category.subcategoryCount || 0} subcategories? Their variants, reviews and uploaded photos will also be removed. This cannot be undone. Products used in orders must be unlisted instead.`
+              ? `Permanently delete “${action.category.name}”, its ${action.category.productCount} products and ${action.category.subcategoryCount || 0} subcategories? Their variants, reviews and uploaded photos will also be removed. This cannot be undone.`
               : action.category.isListed
                 ? "This category and its products will be hidden from customers. You can list it again later."
                 : "This category can appear to customers again. Only published, listed products with stock will be shown."

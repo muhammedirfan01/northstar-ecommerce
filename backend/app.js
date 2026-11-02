@@ -32,38 +32,48 @@ function createApp() {
   app.use("/api/addresses", addressRoutes);
   app.use("/api", shoppingRoutes);
 
-  app.use((req, res) =>
-    res.status(404).json({ success: false, message: "Route not found" }),
-  );
-  app.use((error, req, res, next) => {
-    if (res.headersSent) return next(error);
-    console.error("API request failed:", error.code || error.name);
-    let status = error.status || 500;
-    if (error.name === "VersionError") {
-      return res.status(409).json({
-        success: false,
-        message: "This item changed. Reload it before saving again.",
-      });
-    }
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "An item with this name already exists.",
-      });
-    }
-    if (error.name === "ValidationError" || error.name === "CastError") {
-      status = 400;
-    }
-    if (error.data?.resendAfter)
-      res.set("Retry-After", String(error.data.resendAfter));
-    return res.status(status).json({
-      success: false,
-      message: error.expose
-        ? error.message
-        : "Unable to process your request. Please try again.",
-      ...(error.data ? { data: error.data } : {}),
-    });
+  app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found"
   });
+});
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+
+  console.error(error.message);
+
+  let status = error.status || 500;
+  let message = error.expose
+    ? error.message
+    : "Something went wrong";
+
+  if (error.name === "VersionError") {
+    status = 409;
+    message = "This item was changed. Please reload.";
+  }
+
+  if (error.code === 11000) {
+    status = 409;
+    message = "Item already exists";
+  }
+
+  if (error.name === "ValidationError" || error.name === "CastError") {
+    status = 400;
+    message = "Invalid data provided";
+  }
+
+  if (error.data?.resendAfter) {
+    res.set("Retry-After", String(error.data.resendAfter));
+  }
+
+  res.status(status).json({
+    success: false,
+    message,
+    ...(error.data ? { data: error.data } : {})
+  });
+});
   return app;
 }
 

@@ -8,7 +8,6 @@ import {
 } from "../utils/variantSelection.js";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
-import Order from "../models/Order.js";
 import { deleteProducts } from "./catalogDeletionService.js";
 import { serviceError } from "../utils/serviceError.js";
 import {
@@ -289,11 +288,6 @@ export async function saveVariant(productId, variantId, input, files = []) {
 }
 
 export async function deleteVariant(productId, variantId) {
-  if (await Order.exists({ "items.productId": productId }))
-    throw serviceError(
-      "This product is used in an order. Unlist the variant instead.",
-      409,
-    );
   const product = await Product.findById(productId);
   if (!product) throw serviceError("Product not found.", 404);
   const variant = product.variants.id(variantId);

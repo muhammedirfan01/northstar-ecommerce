@@ -1,7 +1,7 @@
 const benefits = [
   {
-    title: "Free Shipping",
-    description: "On orders above ₹1,999",
+    title: "Explore Products",
+    description: "Search, sort and filter",
     icon: "/free_shipping_icon.png",
   },
   {
@@ -15,8 +15,8 @@ const benefits = [
     icon: "/24_icon.png",
   },
   {
-    title: "Secure Payments",
-    description: "Secure checkout",
+    title: "Cart Review",
+    description: "Current prices and stock",
     icon: "/securepayments_icon.png",
   },
 ];

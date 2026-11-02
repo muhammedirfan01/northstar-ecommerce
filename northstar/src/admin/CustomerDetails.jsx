@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Package, RotateCcw, Wallet, X } from "lucide-react";
+import { Wallet, X } from "lucide-react";
 import { adminApi } from "../api/admin.js";
 import ProfileAvatar from "../components/ProfileAvatar.jsx";
 
@@ -57,8 +57,6 @@ export default function CustomerDetails({ customer, onClose }) {
       {!loading && !error && details && (
         <>
           <div className="cm-customer-stats">
-            <div><Package size={18} aria-hidden="true" /><span>Total orders</span><strong>{details.totalOrders}</strong></div>
-            <div><RotateCcw size={18} aria-hidden="true" /><span>Returned orders</span><strong>{details.returnedOrders}</strong></div>
             <div className="cm-wallet-stat"><Wallet size={18} aria-hidden="true" /><span>Wallet balance</span><strong>{((details.walletBalancePaise || 0) / 100).toLocaleString("en-IN", { style: "currency", currency: "INR" })}</strong></div>
           </div>
 

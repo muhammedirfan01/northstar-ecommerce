@@ -1,10 +1,10 @@
 import { z } from "zod";
-
 const version = z.number().int().min(0);
-
-const details = z.object({
+const details = z.strictObject({
   fullName: z.string().trim().min(2).max(80),
-  phoneNumber: z.string().trim().regex(/^(\+91)?[6-9]\d{9}$/).transform(phone => phone.startsWith("+91") ? phone : "+91" + phone),
+  phoneNumber: z.string().trim()
+    .regex(/^(\+91)?[6-9]\d{9}$/)
+    .transform(phone => phone.startsWith("+91") ? phone : "+91" + phone),
   addressLine1: z.string().trim().min(5).max(160),
   addressLine2: z.string().trim().max(100).default(""),
   city: z.string().trim().min(2).max(80),
@@ -14,11 +14,9 @@ const details = z.object({
   label: z.enum(["Home", "Work", "Other"]).default("Home"),
   isDefault: z.boolean().default(false),
   version,
-}).strict();
+});
 
-const mutation = z.object({
-  version
-}).strict();
+const mutation = z.strictObject({ version });
 
 export function validateAddress(type) {
   return (req, res, next) => {
@@ -46,7 +44,7 @@ export function validateAddressId(req, res, next) {
     return res.status(400).json({
       success: false,
       code: "VALIDATION_ERROR",
-      message: "Invalid address ID."
+      message: "Invalid address ID"
     });
   }
 

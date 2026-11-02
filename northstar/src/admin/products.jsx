@@ -314,7 +314,7 @@ export default function Products() {
           }
           description={
             action.kind === "delete"
-              ? `“${action.product.name}”, its variants and images will be permanently removed. Products used in orders cannot be deleted.`
+              ? `“${action.product.name}”, its variants and images will be permanently removed.`
               : action.product.isListed
                 ? "Customers will no longer see this product. You can list it again later."
                 : "This product can be shown again if it is published, its category is listed, and it has stock."

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 const passwordResetSchema = new mongoose.Schema(
   {
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true ,lowecase:true},
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     authVersion: Number,
     otpHash: { type: String, required: true, select: false },

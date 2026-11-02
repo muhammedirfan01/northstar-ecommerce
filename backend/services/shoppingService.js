@@ -50,7 +50,7 @@ export function describeCartItem(item, product) {
   const stock = variant ? variant.stock : product?.stock || 0;
   const maxQuantity = available ? Math.min(stock, MAX_CART_QUANTITY) : 0;
   if (available && item.quantity > maxQuantity)
-    error = `Only ${maxQuantity} units can be ordered for this option.`;
+    error = `Only ${maxQuantity} units can be added for this option.`;
   const price = variant ? variant.pricePaise : product?.pricePaise || 0;
   return {
     id: String(item._id),

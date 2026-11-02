@@ -170,7 +170,7 @@ export default function Cart() {
             </p>
           </section>
           <aside className="shop-cart-summary">
-            <p className="pd-eyebrow">Order summary</p>
+            <p className="pd-eyebrow">Cart summary</p>
             <h2>Price details</h2>
             <p>
               <span>Items ({cart.quantityTotal})</span>

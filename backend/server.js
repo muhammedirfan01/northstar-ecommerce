@@ -1,31 +1,25 @@
-import "dotenv/config";
+import connectDB from "./config/db.js"
 import mongoose from "mongoose";
-import createApp from "./app.js";
-import connectDB from "./config/db.js";
+import "dotenv/config"
+import createApp from "./app.js"
 
-const port = 5000;
-
-async function startServer() {
-  try {
-    await connectDB();
-    const app = createApp();
-    // Wait for the port so connection errors reach the catch block below.
-    await new Promise((resolve, reject) => {
-      app.listen(port, (error) => {
-        if (error) reject(error);
-        else resolve();
-      });
-    });
-    console.log("Server is running");
-  } catch (error) {
-    console.error(
-      error.code === "EADDRINUSE"
-        ? `Port ${port} is already in use. Stop the other backend and try again.`
-        : `Server startup failed: ${error.message}`,
-    );
-    process.exitCode = 1;
-    await mongoose.disconnect();
+const port=Number(process.env.PORT) || 5000;
+export default async function startServer(){
+ try{
+await connectDB();
+const app=createApp()
+const server=app.listen(port,()=>{
+  console.log(`server running sucessfully on port ${port}`)
+})
+server.on("error",async (error)=>{
+  console.error("error occured.reason is:"+error.message);
+  process.exitCode = 1;
+ await mongoose.disconnect()
+})
+  }catch(error){
+ console.error("error occured.reason is:"+error.message)
+ process.exitCode = 1;
+ await mongoose.disconnect()
   }
 }
-
 await startServer();

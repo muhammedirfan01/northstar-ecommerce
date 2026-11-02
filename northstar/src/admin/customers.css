@@ -466,7 +466,7 @@
 }
 .cm-customer-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
   margin: 22px 0 28px;
 }
@@ -595,7 +595,7 @@
     padding: 22px 16px;
   }
   .cm-customer-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 8px;
   }
   .cm-customer-stats > div {

@@ -8,7 +8,7 @@ export const catalogImageSchema = new mongoose.Schema({
 const categorySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    nameKey: { type: String, required: true, unique: true },
+    nameKey: { type: String, required: true, unique: true }, //used to preveent from duplicated
     parent: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",

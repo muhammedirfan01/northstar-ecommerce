@@ -11,7 +11,6 @@ const stock = {
   type: Number,
   required: true,
   min: 0,
-  max: 1000000,
   validate: Number.isInteger,
 };
 const variantSchema = new mongoose.Schema({

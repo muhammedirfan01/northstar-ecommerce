@@ -41,13 +41,8 @@ export default function Footer() {
           <h2>Quick Links</h2>
           <Link to="/profile">My Profile</Link>
           <Link to="/addresses">Saved Addresses</Link>
-          <span
-            className="footer-unavailable"
-            title="Coming soon"
-            aria-disabled="true"
-          >
-            Return Request · Coming soon
-          </span>
+          <Link to="/wishlist">Wishlist</Link>
+          <Link to="/cart">Cart</Link>
         </nav>
 
         <nav className="footer-links" aria-label="Legal and policies">
@@ -66,13 +61,6 @@ export default function Footer() {
           >
             Privacy &amp; Security · Coming soon
           </span>
-          <span
-            className="footer-unavailable"
-            title="Coming soon"
-            aria-disabled="true"
-          >
-            Refund Policy · Coming soon
-          </span>
         </nav>
       </div>
 
@@ -82,12 +70,6 @@ export default function Footer() {
           reserved.
         </p>
 
-        <div className="footer-payments">
-          <span>Payment methods</span>
-          <span className="payment-badge">Visa</span>
-          <span className="payment-badge">UPI</span>
-          <span className="payment-badge">Razorpay</span>
-        </div>
       </div>
     </footer>
   );

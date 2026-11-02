@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { ShoppingBag, CircleCheck, ClipboardList } from "lucide-react";
+import { Archive, Shapes, CircleCheck } from "lucide-react";
 import { adminApi } from "../api/admin.js";
 
 const statistics = [
-  { key: "orders", label: "Total orders", icon: ShoppingBag },
-  { key: "fulfilled", label: "Fulfilled orders", icon: CircleCheck },
-  { key: "pending", label: "Pending to fulfil", icon: ClipboardList },
+  { key: "products", label: "Total products", icon: Archive },
+  { key: "categories", label: "Total categories", icon: Shapes },
+  { key: "publishedProducts", label: "Published and listed products", icon: CircleCheck },
 ];
 export default function AdminDashboard() {
   const [summary, setSummary] = useState(null);
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
       <div className="admin-page-heading">
         <div>
           <h1>Dashboard Overview</h1>
-          <p>Store performance overview.</p>
+          <p>Catalog and customer overview.</p>
         </div>
       </div>
       {error && (

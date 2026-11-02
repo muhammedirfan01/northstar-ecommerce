@@ -12,7 +12,7 @@ const registrationOtpSchema = new mongoose.Schema(
     email: { type: String, required: true, lowercase: true, trim: true },
     purpose: { type: String, enum: ["registration"], default: "registration", required: true },
     otpHash: { type: String, required: true, select: false },
-    pendingRegistration: { type: registrationDetailsSchema, select: false },
+    pendingRegistration: { type: registrationDetailsSchema, select: false },  //it is for temperary storing
     expiresAt: { type: Date, required: true },
     resendAvailableAt: { type: Date, required: true },
     resendCount: { type: Number, default: 0, min: 0 },

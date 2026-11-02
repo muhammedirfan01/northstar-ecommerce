@@ -1,20 +1,12 @@
 import Product from "../models/Product.js";
-import Order from "../models/Order.js";
 import Review from "../models/Review.js";
 import ShoppingList from "../models/ShoppingList.js";
 import { removeCatalogImages } from "./catalogImageService.js";
-import { serviceError } from "../utils/serviceError.js";
 
-// Product and category deletion share the same order protection and cleanup.
+// Product and category deletion share the same related-data cleanup.
 export async function deleteProducts(products) {
   const ids = products.map((product) => product._id);
   if (!ids.length) return;
-  // Check every product before deleting any of them.
-  if (await Order.exists({ "items.productId": { $in: ids } }))
-    throw serviceError(
-      "A product is used in an order. Unlist this category or product instead.",
-      409,
-    );
   const reviews = await Review.find({ productId: { $in: ids } }).select(
     "images",
   );

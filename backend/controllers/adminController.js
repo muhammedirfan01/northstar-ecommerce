@@ -1,5 +1,4 @@
 import User from "../models/User.js";
-import Order from "../models/Order.js";
 import { Types } from "mongoose";
 
 // Convert MongoDB user into frontend-friendly data
@@ -16,16 +15,6 @@ function customerData(user) {
     isBlocked: user.isBlocked,
     createdAt: user.createdAt,
   };
-}
-
-// Count orders and returned orders
-async function getOrderCounts(customerId) {
-  const [totalOrders, returnedOrders] = await Promise.all([
-    Order.countDocuments({ customer: customerId }),
-    Order.countDocuments({ customer: customerId, status: "returned" }),
-  ]);
-
-  return { totalOrders, returnedOrders };
 }
 
 // Get customers
@@ -66,12 +55,7 @@ export async function getCustomers(req, res) {
     .limit(limit)
     .lean();
 
-  const customerList = await Promise.all(
-    customers.map(async customer => ({
-      ...customerData(customer),
-      ...await getOrderCounts(customer._id),
-    }))
-  );
+  const customerList = customers.map(customerData);
 
   const totalCustomers = await User.countDocuments({
     role: "customer",
@@ -158,8 +142,6 @@ export async function getCustomer(req, res) {
     });
   }
 
-  const orderCounts = await getOrderCounts(customer._id);
-
   const addresses = customer.addresses.map(address => ({
     id: String(address._id),
     fullName: address.fullName,
@@ -181,7 +163,6 @@ export async function getCustomer(req, res) {
     data: {
       customer: {
         ...customerData(customer),
-        ...orderCounts,
         addresses,
         walletBalancePaise: customer.walletBalancePaise ?? 0,
         currency: "INR",

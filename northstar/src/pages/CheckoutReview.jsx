@@ -58,8 +58,7 @@ export default function CheckoutReview() {
             <strong>{money(cart.totalPaise)}</strong>
           </p>
           <p className="shop-help">
-            Order placement and payment will be available in the next checkout
-            stage. These items have not been reserved.
+            Prices and availability may change. Return to your cart to make changes.
           </p>
           <Link to="/cart">Back to cart</Link>
         </section>
