@@ -53,7 +53,7 @@ export default function RegisterForm({
             autoComplete="name"
             minLength={2}
             maxLength={80}
-            required
+            // required
             disabled={busy}
           />
         </div>
@@ -65,7 +65,7 @@ export default function RegisterForm({
             type="email"
             autoComplete="email"
             maxLength={254}
-            required
+            // required
             disabled={busy}
           />
         </div>
@@ -77,7 +77,7 @@ export default function RegisterForm({
             autoComplete="new-password"
             minLength={8}
             maxLength={128}
-            required
+            // required
             disabled={busy}
           />
         </div>
@@ -89,12 +89,14 @@ export default function RegisterForm({
             autoComplete="new-password"
             minLength={8}
             maxLength={128}
-            required
+            // required
             disabled={busy}
           />
         </div>
         <label className="auth-terms">
-          <input name="terms" type="checkbox" required disabled={busy} />
+          <input name="terms" type="checkbox"
+          //  required 
+           disabled={busy} />
           <span>I agree to the Terms of Service &amp; Privacy Policy.</span>
         </label>
         {error && (

@@ -20,3 +20,26 @@ export function matchesOtpHash(storedHash, submittedHash) {
   return stored.length === submitted.length &&
     timingSafeEqual(stored, submitted);
 }
+
+/*
+
+
+function generateOtp(){
+   const otp=randomInt(0,100000).
+
+   return otp.toString().padStart(6,"0")         //generateOTP
+}
+
+function hashOtp(){
+   
+cosnt data=JSON.stringify()
+
+}
+
+
+funcion cerifyotp([verificationId, purpose, code])){
+return hmac()
+
+}
+                    //HASHING THIS OTP
+*/
