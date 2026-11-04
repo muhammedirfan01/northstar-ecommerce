@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { dashboardSummary } from "../services/dashboardService.js";
+import { getDashboard } from "../controllers/adminController.js";
 import catalogAdminRoutes from "./catalogAdminRoutes.js";
 import { requireAuth, requireAdmin, publicUser } from "../middlewares/auth.js";
 import {
@@ -16,7 +16,6 @@ import {
   validateCustomerId,
   validateCustomerPhoto,
 } from "../middlewares/validateAdmin.js";
-
 const router = Router();
 router.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -24,11 +23,14 @@ router.use((req, res, next) => {
 });
 router.use(requireAuth, requireAdmin);
 router.get("/me", (req, res) =>
-  res.json({ success: true, data: { user: publicUser(req.user) } }),
+  res.json({
+    success: true,
+    data: {
+      user: publicUser(req.user),
+    },
+  }),
 );
-router.get("/dashboard", async (_req, res) =>
-  res.json({ success: true, data: await dashboardSummary() }),
-);
+router.get("/dashboard", getDashboard);
 router.get("/customers", validateCustomerQuery, getCustomers);
 router.get("/customers/:id", validateCustomerId, getCustomer);
 router.get(

@@ -1,3 +1,5 @@
+import Product from "../models/Product.js";
+import Category from "../models/Category.js";
 import User from "../models/User.js";
 import { Types } from "mongoose";
 
@@ -20,54 +22,54 @@ function customerData(user) {
 // Get customers
 export async function getCustomers(req, res) {
   const { page, limit, search, status } = req.customerQuery;
-
   const filter = {
     role: "customer",
     deletedAt: null,
   };
-
   if (status !== "all") {
     filter.isBlocked = status === "blocked";
   }
-
   if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const pattern = new RegExp(escaped, "i");
-
     filter.$or = [
-      { name: pattern },
-      { email: pattern },
+      {
+        name: pattern,
+      },
+      {
+        email: pattern,
+      },
     ];
-
     if (Types.ObjectId.isValid(search) && /^[a-f0-9]{24}$/i.test(search)) {
-      filter.$or.push({ _id: new Types.ObjectId(search) });
+      filter.$or.push({
+        _id: new Types.ObjectId(search),
+      });
     }
   }
-
   const total = await User.countDocuments(filter);
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const currentPage = Math.min(page, totalPages);
-
   const customers = await User.find(filter)
-    .select("_id name email phone profileImage isEmailVerified isBlocked createdAt")
-    .sort({ createdAt: -1, _id: -1 })
+    .select(
+      "_id name email phone profileImage isEmailVerified isBlocked createdAt",
+    )
+    .sort({
+      createdAt: -1,
+      _id: -1,
+    })
     .skip((currentPage - 1) * limit)
     .limit(limit)
     .lean();
-
   const customerList = customers.map(customerData);
-
   const totalCustomers = await User.countDocuments({
     role: "customer",
     deletedAt: null,
   });
-
   const blocked = await User.countDocuments({
     role: "customer",
     deletedAt: null,
     isBlocked: true,
   });
-
   return res.json({
     success: true,
     data: {
@@ -93,37 +95,34 @@ export async function getCustomers(req, res) {
 export async function setCustomerStatus(req, res) {
   const { id } = req.customerStatus.params;
   const { isBlocked } = req.customerStatus.body;
-
   if (id === String(req.user._id)) {
     return res.status(403).json({
       success: false,
       message: "You cannot change your own account status.",
     });
   }
-
   const customer = await User.findOne({
     _id: id,
     role: "customer",
     deletedAt: null,
   }).select("+authVersion");
-
   if (!customer) {
     return res.status(404).json({
       success: false,
       message: "Customer not found.",
     });
   }
-
   if (customer.isBlocked !== isBlocked) {
     customer.isBlocked = isBlocked;
     customer.authVersion = (customer.authVersion ?? 0) + 1;
     await customer.save();
   }
-
   return res.json({
     success: true,
     message: isBlocked ? "Customer blocked." : "Customer unblocked.",
-    data: { customer: customerData(customer) },
+    data: {
+      customer: customerData(customer),
+    },
   });
 }
 
@@ -134,15 +133,13 @@ export async function getCustomer(req, res) {
     role: "customer",
     deletedAt: null,
   }).select("+addresses +defaultAddressId +walletBalancePaise");
-
   if (!customer) {
     return res.status(404).json({
       success: false,
       message: "Customer not found.",
     });
   }
-
-  const addresses = customer.addresses.map(address => ({
+  const addresses = customer.addresses.map((address) => ({
     id: String(address._id),
     fullName: address.fullName,
     phoneNumber: address.phoneNumber,
@@ -155,9 +152,7 @@ export async function getCustomer(req, res) {
     label: address.label,
     isDefault: String(address._id) === String(customer.defaultAddressId),
   }));
-
   addresses.sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
-
   return res.json({
     success: true,
     data: {
@@ -178,7 +173,6 @@ export async function getCustomerPhoto(req, res) {
     role: "customer",
     deletedAt: null,
   }).select("profileImage +profilePhoto");
-
   if (
     !customer?.profilePhoto ||
     customer.profileImage !== `/profile/photo/${req.query.version}`
@@ -188,12 +182,10 @@ export async function getCustomerPhoto(req, res) {
       message: "Photo not found.",
     });
   }
-
   res.set({
     "Content-Type": "image/jpeg",
     "X-Content-Type-Options": "nosniff",
   });
-
   return res.send(customer.profilePhoto);
 }
 
@@ -206,23 +198,29 @@ export async function deleteCustomer(req, res) {
       deletedAt: null,
     },
     {
-      $set: { deletedAt: new Date() },
-      $inc: { authVersion: 1 },
+      $set: {
+        deletedAt: new Date(),
+      },
+      $inc: {
+        authVersion: 1,
+      },
     },
-    { returnDocument: "after" }
+    {
+      returnDocument: "after",
+    },
   );
-
   if (!customer) {
     return res.status(404).json({
       success: false,
       message: "Customer not found.",
     });
   }
-
   return res.json({
     success: true,
     message: "Customer deleted.",
-    data: { customer: customerData(customer) },
+    data: {
+      customer: customerData(customer),
+    },
   });
 }
 
@@ -232,26 +230,59 @@ export async function restoreCustomer(req, res) {
     {
       _id: req.params.id,
       role: "customer",
-      deletedAt: { $ne: null },
+      deletedAt: {
+        $ne: null,
+      },
     },
     {
-      $set: { deletedAt: null },
-      $inc: { authVersion: 1 },
+      $set: {
+        deletedAt: null,
+      },
+      $inc: {
+        authVersion: 1,
+      },
     },
-    { returnDocument: "after" }
+    {
+      returnDocument: "after",
+    },
   );
-
   if (!customer) {
     return res.status(404).json({
       success: false,
       message: "Customer not found.",
     });
   }
-
   return res.json({
     success: true,
     message: "Customer restored.",
-    data: { customer: customerData(customer) },
+    data: {
+      customer: customerData(customer),
+    },
   });
 }
-
+export async function getDashboard(_req, res) {
+  const customers = await User.countDocuments({
+    role: "customer",
+    deletedAt: null,
+  });
+  const products = await Product.countDocuments({
+    deletedAt: null,
+  });
+  const categories = await Category.countDocuments({
+    deletedAt: null,
+  });
+  const publishedProducts = await Product.countDocuments({
+    deletedAt: null,
+    isPublished: true,
+    isListed: true,
+  });
+  return res.json({
+    success: true,
+    data: {
+      customers,
+      products,
+      categories,
+      publishedProducts,
+    },
+  });
+}

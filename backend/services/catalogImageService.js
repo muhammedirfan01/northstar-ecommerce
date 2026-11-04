@@ -1,8 +1,7 @@
 import sharp from "sharp";
 import { randomUUID } from "node:crypto";
 import { getCloudinary } from "../config/cloudinary.js";
-import { serviceError } from "../utils/serviceError.js";
-
+import { httpError } from "../utils/httpError.js";
 export async function prepareCatalogImage(file) {
   try {
     const image = sharp(file.buffer, {
@@ -13,22 +12,27 @@ export async function prepareCatalogImage(file) {
     if (
       !["jpeg", "png", "webp"].includes(metadata.format) ||
       (metadata.pages || 1) > 1
-    )
+    ) {
       throw new Error("Invalid image");
+    }
     return await image
       .rotate()
-      .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 85 })
+      .resize(1200, 1200, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({
+        quality: 85,
+      })
       .toBuffer();
   } catch {
-    throw serviceError(
-      "One of the files is not a valid JPG, PNG or WebP image.",
-    );
+    throw httpError("One of the files is not a valid JPG, PNG or WebP image.");
   }
 }
-
 export async function removeCatalogImages(images) {
-  if (!images.length) return;
+  if (!images.length) {
+    return;
+  }
   let cloudinary;
   try {
     cloudinary = getCloudinary();
@@ -46,23 +50,29 @@ export async function removeCatalogImages(images) {
     ),
   );
   results.forEach((result, index) => {
-    if (result.status === "rejected")
+    if (result.status === "rejected") {
       console.error("Could not remove catalog image:", images[index].publicId);
+    }
   });
 }
-
 export async function uploadCatalogImages(files, folder = "northstar/catalog") {
-  if (!files.length) return [];
+  if (!files.length) {
+    return [];
+  }
   // Inspect and resize every file before uploading anything to Cloudinary.
   const buffers = [];
-  for (const file of files) buffers.push(await prepareCatalogImage(file));
+  for (const file of files) {
+    buffers.push(await prepareCatalogImage(file));
+  }
   const cloudinary = getCloudinary();
   const images = [];
   const attempted = [];
   try {
     for (const buffer of buffers) {
       const publicId = `${folder}/${randomUUID()}`;
-      attempted.push({ publicId });
+      attempted.push({
+        publicId,
+      });
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
@@ -76,11 +86,14 @@ export async function uploadCatalogImages(files, folder = "northstar/catalog") {
         stream.on("error", reject);
         stream.end(buffer);
       });
-      images.push({ publicId: result.public_id, url: result.secure_url });
+      images.push({
+        publicId: result.public_id,
+        url: result.secure_url,
+      });
     }
     return images;
   } catch {
     await removeCatalogImages(attempted);
-    throw serviceError("Could not upload images. Please try again.", 503);
+    throw httpError("Could not upload images. Please try again.", 503);
   }
 }

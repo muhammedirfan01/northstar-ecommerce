@@ -5,11 +5,9 @@ import {
   disableCatalogCache,
   validateCatalogStoreQuery,
 } from "../middlewares/validateCatalogStore.js";
-
 const router = Router();
 router.use(disableCatalogCache);
 router.get("/categories", catalogStore.listCategories);
 router.get("/", validateCatalogStoreQuery, catalogStore.listProducts);
 router.get("/:id", validateCatalogId, catalogStore.getProduct);
-
 export default router;

@@ -2,8 +2,9 @@ import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { requireAuth } from "../middlewares/auth.js";
 import {
-  validateAddress,
   validateAddressId,
+  validateAddressDetails,
+  validateAddressVersion,
 } from "../middlewares/validateAddress.js";
 import {
   getAddresses,
@@ -12,24 +13,22 @@ import {
   deleteAddress,
   setDefaultAddress,
 } from "../controllers/addressController.js";
-
 const router = Router();
 router.use((req, res, next) => {
-  res.set("Cache-Control", "no-store");    
+  res.set("Cache-Control", "no-store");
   next();
 });
 router.use(requireAuth, (req, res, next) =>
   req.user.role === "customer"
     ? next()
-    : res
-        .status(403)
-        .json({
-          success: false,
-          message: "Address management is available for customer accounts.",
-        }),
+    : res.status(403).json({
+        success: false,
+        message: "Address management is available for customer accounts.",
+      }),
 );
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // need to find out this
+  windowMs: 15 * 60 * 1000,
+  // need to find out this
   limit: 60,
   keyGenerator: (req) => req.user.id,
   standardHeaders: true,
@@ -40,26 +39,26 @@ const limiter = rateLimit({
   },
 });
 router.get("/", getAddresses);
-router.post("/", limiter, validateAddress("details"), addAddress);
+router.post("/", limiter, validateAddressDetails, addAddress);
 router.patch(
   "/:id",
   limiter,
   validateAddressId,
-  validateAddress("details"),
+  validateAddressDetails,
   editAddress,
 );
 router.delete(
   "/:id",
   limiter,
   validateAddressId,
-  validateAddress("mutation"),
+  validateAddressVersion,
   deleteAddress,
 );
 router.patch(
   "/:id/default",
   limiter,
   validateAddressId,
-  validateAddress("mutation"),
+  validateAddressVersion,
   setDefaultAddress,
 );
 export default router;

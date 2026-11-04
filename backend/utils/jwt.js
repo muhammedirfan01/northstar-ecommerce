@@ -13,7 +13,8 @@ export function createToken(user) {
       role: user.role,
       authVersion: user.authVersion ?? 0,
     },
-    getJwtSecret(), //secretkey
+    getJwtSecret(),
+    //secretkey
     {
       expiresIn: Math.floor(AUTH_LIFETIME_MS / 1000), // token lifetime in seconds
     },
@@ -22,7 +23,6 @@ export function createToken(user) {
 // Store JWT in cookie
 export function issueAuthCookie(res, user) {
   const token = createToken(user);
-
   res.cookie(AUTH_COOKIE_NAME, token, {
     //res.cookie(name, value, options);
     ...authCookieOptions(),
@@ -32,7 +32,9 @@ export function issueAuthCookie(res, user) {
 // Read and verify JWT
 export function readToken(req) {
   const token = req.cookies?.[AUTH_COOKIE_NAME];
-  if (!token) return null;
+  if (!token) {
+    return null;
+  }
   try {
     return jwt.verify(token, getJwtSecret());
   } catch {

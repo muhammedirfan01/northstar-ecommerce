@@ -1,7 +1,11 @@
-export function otpTiming(result) {
+export function otpTiming(result) {   //In result we would have that expiresIn,resendAfter
   const now = Date.now();
-  return {
-    expiresAt: result.expiresAt ? Date.parse(result.expiresAt) : now + result.expiresIn * 1000,
-    resendAt: now + result.resendAfter * 1000,
-  };
+  let expiresAt;
+  if (result.expiresAt) {
+    expiresAt = Date.parse(result.expiresAt);
+  } else {
+    expiresAt = now + result.expiresIn * 1000;
+  }
+  const resendAt = now + result.resendAfter * 1000;
+  return { expiresAt, resendAt };
 }

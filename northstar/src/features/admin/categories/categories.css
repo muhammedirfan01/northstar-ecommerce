@@ -1,0 +1,3 @@
+.catalog-category-form {
+  width: min(580px, calc(100vw - 32px));
+}

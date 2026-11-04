@@ -1,9 +1,10 @@
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { AuthContext } from "./AuthContext.js";
-import { authApi, ACCOUNT_RESTRICTION_EVENT } from "../api/auth.js";
-import AccountRestricted from "../components/AccountRestricted.jsx";
-import SignOutDialog from "../components/SignOutDialog.jsx";
+import API, { ACCOUNT_RESTRICTION_EVENT } from "../api/API.js";
+import AccountRestricted from "../features/auth/AccountRestricted.jsx";
+import SignOutDialog from "../features/auth/SignOutDialog.jsx";
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -11,116 +12,150 @@ export default function AuthProvider({ children }) {
   const [error, setError] = useState("");
   const [restriction, setRestriction] = useState(null);
   const [signOutPrompt, setSignOutPrompt] = useState(null);
+
   const authChannel = useRef(null);
   const accountRevision = useRef(0);
+
   const navigate = useNavigate();
   const location = useLocation();
 
+  function updateAccount(account) {
+    accountRevision.current++;
+    setUser(account);
+    setRestriction(null);
+    setError("");
+    setStatus("ready");
+  }
+
   const refreshUser = useCallback(async (signal) => {
     const revision = accountRevision.current;
+
     try {
-      const result = await authApi.me(signal);
-      if (!signal?.aborted && revision === accountRevision.current) {
-        setUser(result.user);
-        setRestriction(null);
-        setError("");
-        setStatus("ready");
+      const response = await API.get("/auth/me", { signal });
+
+      if (signal?.aborted || revision !== accountRevision.current) {
+        return;
       }
+
+      setUser(response.data.data.user);
+      setRestriction(null);
+      setError("");
+      setStatus("ready");
+
       return "authenticated";
     } catch (failure) {
-      if (["ACCOUNT_BLOCKED", "ACCOUNT_DELETED"].includes(failure.code))
+      if (signal?.aborted || revision !== accountRevision.current) {
+        return;
+      }
+
+      if (["ACCOUNT_BLOCKED", "ACCOUNT_DELETED"].includes(failure.code)) {
         return "restricted";
-      if (signal?.aborted || revision !== accountRevision.current) return;
+      }
+
       if (failure.status === 401 || failure.status === 403) {
         setUser(null);
         setRestriction(null);
         setError("");
         setStatus("ready");
         return "anonymous";
-      } else {
-        setError(failure.message);
-        setStatus("error");
-        return "error";
       }
+
+      setError(failure.message);
+      setStatus("error");
+      return "error";
     }
   }, []);
 
+  function clearAccount() {
+    updateAccount(null);
+    setSignOutPrompt(null);
+    navigate("/", { replace: true });
+  }
+
+  // Detect blocked or deleted accounts.
   useEffect(() => {
-    const restricted = (event) => {
-      accountRevision.current++;
-      setUser(null);
+    function handleRestriction(event) {
+      updateAccount(null);
       setRestriction(event.detail);
-      setError("");
-      setStatus("ready");
       setSignOutPrompt(null);
+    }
+
+    window.addEventListener(ACCOUNT_RESTRICTION_EVENT, handleRestriction);
+
+    return () => {
+      window.removeEventListener(
+        ACCOUNT_RESTRICTION_EVENT,
+        handleRestriction
+      );
     };
-    window.addEventListener(ACCOUNT_RESTRICTION_EVENT, restricted);
-    return () =>
-      window.removeEventListener(ACCOUNT_RESTRICTION_EVENT, restricted);
   }, []);
 
-  const clearAccount = useCallback(() => {
-    accountRevision.current++;
-    setUser(null);
-    setRestriction(null);
-    setError("");
-    setStatus("ready");
-    navigate("/", { replace: true });
-  }, [navigate]);
-
+  // Synchronize logout between browser tabs.
   useEffect(() => {
     if (!("BroadcastChannel" in window)) return;
+
     const channel = new BroadcastChannel("northstar:auth");
     authChannel.current = channel;
+
     channel.onmessage = (event) => {
-      if (event.data?.type !== "SIGNED_OUT") return;
-      setSignOutPrompt(null);
-      clearAccount();
+      if (event.data?.type === "SIGNED_OUT") {
+        clearAccount();
+      }
     };
+
     return () => {
       authChannel.current = null;
       channel.close();
     };
-  }, [clearAccount]);
+  }, [navigate]);
 
+  // Check authentication when the application starts.
   useEffect(() => {
     const controller = new AbortController();
-    queueMicrotask(() => {
-      if (!controller.signal.aborted) refreshUser(controller.signal);
-    });
+
+    refreshUser(controller.signal);
+
     return () => controller.abort();
   }, [refreshUser]);
 
+  // Recheck the account while the customer is active.
   useEffect(() => {
     if (!user) return;
+
     let pending = false;
-    const refresh = async () => {
+    const controller = new AbortController();
+
+    async function checkAccount() {
       if (document.visibilityState === "hidden" || pending) return;
+
       pending = true;
+
       try {
-        await refreshUser();
+        await refreshUser(controller.signal);
       } finally {
         pending = false;
       }
-    };
-    window.addEventListener("focus", refresh);
-    document.addEventListener("visibilitychange", refresh);
-    const interval = window.setInterval(refresh, 5000);
+    }
+
+    window.addEventListener("focus", checkAccount);
+    document.addEventListener("visibilitychange", checkAccount);
+
+    const interval = window.setInterval(checkAccount, 5000);
+
     return () => {
-      window.removeEventListener("focus", refresh);
-      document.removeEventListener("visibilitychange", refresh);
+      controller.abort();
+      window.removeEventListener("focus", checkAccount);
+      document.removeEventListener("visibilitychange", checkAccount);
       window.clearInterval(interval);
     };
-  }, [user, restriction, refreshUser]);
+  }, [Boolean(user), refreshUser]);
 
   function completeLogin(account) {
-    accountRevision.current++;
+    updateAccount(account);
     setSignOutPrompt(null);
-    setUser(account);
-    setRestriction(null);
-    setStatus("ready");
-    setError("");
+
     const next = new URLSearchParams(location.search).get("next");
+
     const allowed =
       [
         "/profile",
@@ -130,29 +165,55 @@ export default function AuthProvider({ children }) {
         "/cart",
         "/wishlist",
         "/checkout",
-      ].includes(next) || /^\/products\/[a-f0-9]{24}$/i.test(next || "");
+      ].includes(next) ||
+      /^\/products\/[a-f0-9]{24}$/i.test(next || "");
+
     const destination = allowed ? next : "/";
+
     navigate(account.role === "admin" ? "/admin" : destination, {
       replace: true,
     });
   }
 
   async function logout() {
-    await authApi.logout();
+    await API.post("/auth/logout", {});
     clearAccount();
     authChannel.current?.postMessage({ type: "SIGNED_OUT" });
   }
 
   function requestLogout() {
-    if (user) setSignOutPrompt({ stage: "confirm", account: user });
+    if (user) {
+      setSignOutPrompt({
+        stage: "confirm",
+        account: user,
+      });
+    }
   }
 
-  function updateAccount(account) {
-    accountRevision.current++;
-    setUser(account);
-    setRestriction(null);
-    setError("");
-    setStatus("ready");
+  async function checkRestrictedAccount() {
+    const result = await refreshUser();
+
+    if (result === "anonymous") {
+      navigate("/?signin=1", { replace: true });
+    }
+
+    if (result === "error") {
+      return "Unable to check your account. Please try again.";
+    }
+
+    if (result === "restricted") {
+      return "Your account is still restricted. Please contact support.";
+    }
+
+    return "";
+  }
+
+  async function confirmLogout() {
+    await logout();
+
+    setSignOutPrompt((previous) =>
+      previous ? { ...previous, stage: "success" } : null
+    );
   }
 
   return (
@@ -177,16 +238,7 @@ export default function AuthProvider({ children }) {
       ) : restriction ? (
         <AccountRestricted
           restriction={restriction}
-          onCheck={async () => {
-            const result = await refreshUser();
-            if (result === "anonymous")
-              navigate("/?signin=1", { replace: true });
-            if (result === "error")
-              return "Unable to check your account. Please try again.";
-            return result === "restricted"
-              ? "Your account is still restricted. Please contact support."
-              : "";
-          }}
+          onCheck={checkRestrictedAccount}
           onSignOut={async () => {
             await logout();
             navigate("/?signin=1", { replace: true });
@@ -195,16 +247,12 @@ export default function AuthProvider({ children }) {
       ) : (
         children
       )}
+
       {signOutPrompt && (
         <SignOutDialog
           account={signOutPrompt.account}
           stage={signOutPrompt.stage}
-          onConfirm={async () => {
-            await logout();
-            setSignOutPrompt((previous) =>
-              previous ? { ...previous, stage: "success" } : null,
-            );
-          }}
+          onConfirm={confirmLogout}
           onClose={() => setSignOutPrompt(null)}
           onSignIn={() => {
             setSignOutPrompt(null);

@@ -1,3 +1,6 @@
+
+//5 functions
+   //1,variantConfiguration=
 export function variantConfiguration(variant) {
   return (
     variantOptions(variant)
@@ -5,22 +8,42 @@ export function variantConfiguration(variant) {
       .join(" / ") || variant.name
   );
 }
-
 export function variantOptions(variant) {
-  if (!variant) return [];
-  if (variant.options?.length) return variant.options;
+  if (!variant) {
+    return [];
+  }
+  if (variant.options?.length) {
+    return variant.options;
+  }
   const options = [];
-  if (variant.colorName)
-    options.push({ name: "Colour", value: variant.colorName });
-  if (variant.memory) options.push({ name: "RAM", value: variant.memory });
-  if (variant.storage)
-    options.push({ name: "Storage", value: variant.storage });
+  if (variant.colorName) {
+    options.push({
+      name: "Colour",
+      value: variant.colorName,
+    });
+  }
+  if (variant.memory) {
+    options.push({
+      name: "RAM",
+      value: variant.memory,
+    });
+  }
+  if (variant.storage) {
+    options.push({
+      name: "Storage",
+      value: variant.storage,
+    });
+  }
   return options;
 }
 export function optionKey(name) {
   const key = name.trim().toLowerCase();
-  if (key === "color" || key === "colour") return "colour";
-  if (key === "memory" || key === "ram") return "ram";
+  if (key === "color" || key === "colour") {
+    return "colour";
+  }
+  if (key === "memory" || key === "ram") {
+    return "ram";
+  }
   return key;
 }
 export function selectedVariant(product) {

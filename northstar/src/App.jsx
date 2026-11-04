@@ -1,27 +1,26 @@
 import { BrowserRouter, Navigate, Routes, Route } from "react-router";
-import Home from "./components/home.jsx";
-import AdminLayout from "./admin/AdminLayout";
-import AdminDashboard from "./admin/AdminDashboard";
-import Categories from "./admin/categories.jsx";
-import Customers from "./admin/Customers.jsx";
+import Home from "./features/shop/Home.jsx";
+import AdminLayout from "./features/admin/AdminLayout.jsx";
+import AdminDashboard from "./features/admin/AdminDashboard.jsx";
+import Categories from "./features/admin/categories/Categories.jsx";
+import Customers from "./features/admin/customers/Customers.jsx";
 import AuthProvider from "./context/AuthProvider.jsx";
-import RequireAdmin from "./components/RequireAdmin.jsx";
-import RequireSignedIn from "./components/RequireSignedIn.jsx";
-import StoreLayout from "./components/StoreLayout.jsx";
-import ProfileScreen from "./components/profile/ProfileScreen.jsx";
-import Addresses from "./pages/Addresses.jsx";
-import Products from "./admin/products.jsx";
-import ProductForm from "./admin/catalog/ProductForm.jsx";
-import AdminProductReviews from "./admin/catalog/ProductReviews.jsx";
-import ProductVariants from "./admin/catalog/ProductVariants.jsx";
+import RequireAdmin from "./features/admin/RequireAdmin.jsx";
+import RequireSignedIn from "./features/auth/RequireSignedIn.jsx";
+import StoreLayout from "./components/layout/StoreLayout.jsx";
+import ProfileScreen from "./features/profile/ProfileScreen.jsx";
+import Addresses from "./features/profile/Addresses.jsx";
+import Products from "./features/admin/products/Products.jsx";
+import ProductForm from "./features/admin/products/ProductForm.jsx";
+import AdminProductReviews from "./features/admin/products/ProductReviews.jsx";
+import ProductVariants from "./features/admin/products/ProductVariants.jsx";
 import ShoppingProvider from "./context/ShoppingProvider.jsx";
-import ProductListing from "./pages/ProductListing.jsx";
-import ProductDetails from "./pages/ProductDetails.jsx";
-import Cart from "./pages/Cart.jsx";
-import Wishlist from "./pages/Wishlist.jsx";
-import CheckoutReview from "./pages/CheckoutReview.jsx";
-import NotFound from "./pages/NotFound.jsx";
-
+import ProductListing from "./features/shop/ProductListing.jsx";
+import ProductDetails from "./features/shop/ProductDetails.jsx";
+import Cart from "./features/cart/Cart.jsx";
+import Wishlist from "./features/wishlist/Wishlist.jsx";
+import CheckoutReview from "./features/checkout/CheckoutReview.jsx";
+import NotFound from "./components/ui/NotFound.jsx";
 export default function App() {
   return (
     <BrowserRouter>

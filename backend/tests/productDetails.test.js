@@ -1,15 +1,16 @@
+import { checkProductInput } from "../middlewares/validateProduct.js";
+import { checkVariantInput } from "../middlewares/validateVariant.js";
+import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import Product from "../models/Product.js";
-import {
-  productSchema,
-  variantSchema,
-} from "../middlewares/validateCatalog.js";
-import { reviewSchema } from "../middlewares/validateReview.js";
+import { checkReviewInput } from "../middlewares/validateReview.js";
 import { validateVariantOptions } from "../utils/variantOptions.js";
-import { publicProduct } from "../services/productService.js";
-import { reviewSummary } from "../services/reviewService.js";
-
+import { publicProduct } from "../utils/product.js";
+import { reviewSummary } from "../utils/review.js";
+const productSchema = validationCase(checkProductInput);
+const variantSchema = validationCase(checkVariantInput);
+const reviewSchema = validationCase(checkReviewInput);
 const imageId = "111111111111111111111111";
 const productInput = {
   name: "Laptop",
@@ -36,7 +37,6 @@ const variantInput = {
   stock: "3",
   isListed: true,
 };
-
 test("product presentation supports legacy forms and validates cards and promotional fields", () => {
   const legacy = productSchema.parse(productInput);
   assert.deepEqual(legacy.quickSpecs, []);
@@ -47,23 +47,50 @@ test("product presentation supports legacy forms and validates cards and promoti
     subtitle: "Built for work",
     badge: "Best seller",
     priceNote: "Includes taxes.",
-    quickSpecs: [{ label: "Display", value: "Retina", note: "120 Hz" }],
+    quickSpecs: [
+      {
+        label: "Display",
+        value: "Retina",
+        note: "120 Hz",
+      },
+    ],
   });
   assert.equal(updated.quickSpecs[0].value, "Retina");
   for (const extra of [
-    { quickSpecs: [{ label: "", value: "Retina" }] },
     {
-      quickSpecs: Array.from({ length: 7 }, () => ({
-        label: "Display",
-        value: "Retina",
-      })),
+      quickSpecs: [
+        {
+          label: "",
+          value: "Retina",
+        },
+      ],
     },
-    { badge: "Uncontrolled badge" },
-    { priceNote: "x".repeat(181) },
-    { rating: 5 },
+    {
+      quickSpecs: Array.from(
+        {
+          length: 7,
+        },
+        () => ({
+          label: "Display",
+          value: "Retina",
+        }),
+      ),
+    },
+    {
+      badge: "Uncontrolled badge",
+    },
+    {
+      priceNote: "x".repeat(181),
+    },
+    {
+      rating: 5,
+    },
   ])
     assert.equal(
-      productSchema.safeParse({ ...productInput, ...extra }).success,
+      productSchema.safeParse({
+        ...productInput,
+        ...extra,
+      }).success,
       false,
     );
 });
@@ -80,25 +107,47 @@ test("structured variants validate colour pairs, IDs and prices while keeping na
     "",
   );
   for (const extra of [
-    { colorHex: "red" },
-    { colorName: "" },
-    { colorHex: "" },
-    { imageId: "other-image" },
-    { regularPrice: "50" },
+    {
+      colorHex: "red",
+    },
+    {
+      colorName: "",
+    },
+    {
+      colorHex: "",
+    },
+    {
+      imageId: "other-image",
+    },
+    {
+      regularPrice: "50",
+    },
   ])
     assert.equal(
-      variantSchema.safeParse({ ...variantInput, ...extra }).success,
+      variantSchema.safeParse({
+        ...variantInput,
+        ...extra,
+      }).success,
       false,
     );
   assert.equal(
-    variantSchema.safeParse({ ...variantInput, memory: "", storage: "" })
-      .success,
+    variantSchema.safeParse({
+      ...variantInput,
+      memory: "",
+      storage: "",
+    }).success,
     true,
   );
 });
 test("variants reject duplicate combinations, inconsistent swatches and another product's images", () => {
   const product = new Product({
-    images: [{ _id: imageId, url: "/test.png", publicId: "test" }],
+    images: [
+      {
+        _id: imageId,
+        url: "/test.png",
+        publicId: "test",
+      },
+    ],
     variants: [
       {
         name: "Existing",
@@ -117,7 +166,9 @@ test("variants reject duplicate combinations, inconsistent swatches and another 
         ...variantInput,
         colorName: "black",
       }),
-    { status: 409 },
+    {
+      status: 409,
+    },
   );
   assert.throws(
     () =>
@@ -126,7 +177,9 @@ test("variants reject duplicate combinations, inconsistent swatches and another 
         memory: "32 GB",
         colorHex: "#333333",
       }),
-    { status: 400 },
+    {
+      status: 400,
+    },
   );
   assert.throws(
     () =>
@@ -135,7 +188,9 @@ test("variants reject duplicate combinations, inconsistent swatches and another 
         memory: "32 GB",
         imageId: "222222222222222222222222",
       }),
-    { status: 400 },
+    {
+      status: 400,
+    },
   );
   assert.doesNotThrow(() =>
     validateVariantOptions(
@@ -150,9 +205,20 @@ test("public product data includes editable presentation and variant option fiel
     name: "Laptop",
     series: "Pro",
     subtitle: "Work anywhere",
-    quickSpecs: [{ label: "Display", value: "Retina" }],
+    quickSpecs: [
+      {
+        label: "Display",
+        value: "Retina",
+      },
+    ],
     category: null,
-    images: [{ _id: imageId, url: "/test.png", publicId: "private-public-id" }],
+    images: [
+      {
+        _id: imageId,
+        url: "/test.png",
+        publicId: "private-public-id",
+      },
+    ],
     variants: [
       {
         name: "Black",
@@ -180,16 +246,33 @@ test("reviews reject client-controlled verification, identity, moderation and in
   };
   assert.equal(reviewSchema.safeParse(review).success, true);
   for (const extra of [
-    { rating: 6 },
-    { rating: 3.5 },
-    { title: " " },
-    { text: "short" },
-    { isListed: true },
-    { verified: true },
-    { userId: imageId },
+    {
+      rating: 6,
+    },
+    {
+      rating: 3.5,
+    },
+    {
+      title: " ",
+    },
+    {
+      text: "short",
+    },
+    {
+      isListed: true,
+    },
+    {
+      verified: true,
+    },
+    {
+      userId: imageId,
+    },
   ])
     assert.equal(
-      reviewSchema.safeParse({ ...review, ...extra }).success,
+      reviewSchema.safeParse({
+        ...review,
+        ...extra,
+      }).success,
       false,
     );
 });
@@ -199,9 +282,16 @@ test("review summaries handle empty reviews and calculate recommendation percent
     average: 0,
     recommendPercent: 0,
   });
-  assert.deepEqual(reviewSummary({ count: 3, average: 4, recommended: 2 }), {
-    count: 3,
-    average: 4,
-    recommendPercent: 67,
-  });
+  assert.deepEqual(
+    reviewSummary({
+      count: 3,
+      average: 4,
+      recommended: 2,
+    }),
+    {
+      count: 3,
+      average: 4,
+      recommendPercent: 67,
+    },
+  );
 });

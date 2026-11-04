@@ -1,6 +1,5 @@
 import "dotenv/config";
 import mailer from "../config/mailer.js";
-
 try {
   await mailer.verify();
   console.log("Email server connection successful. No test email was sent.");

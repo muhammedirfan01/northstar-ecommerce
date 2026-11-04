@@ -1,14 +1,16 @@
-import { serviceError } from "./serviceError.js";
+import { httpError } from "./httpError.js";
 import { variantOptions, optionName } from "./variantSelection.js";
-
 function normalized(value) {
   return (value || "").trim().toLowerCase();
 }
 export function validateVariantOptions(product, variantId, input) {
-  if (input.imageId && !product.images.id(input.imageId))
-    throw serviceError("Choose an image from this product's gallery.");
+  if (input.imageId && !product.images.id(input.imageId)) {
+    throw httpError("Choose an image from this product's gallery.");
+  }
   const options = variantOptions(input);
-  if (!options.length) return;
+  if (!options.length) {
+    return;
+  }
   const signature = (values) =>
     values
       .map((option) => `${optionName(option.name)}:${normalized(option.value)}`)
@@ -21,8 +23,9 @@ export function validateVariantOptions(product, variantId, input) {
     others.some(
       (variant) => signature(variantOptions(variant)) === signature(options),
     )
-  )
-    throw serviceError("This option combination already exists.", 409);
+  ) {
+    throw httpError("This option combination already exists.", 409);
+  }
   if (
     options.some((option) => optionName(option.name) === "colour") &&
     others.some(
@@ -37,8 +40,9 @@ export function validateVariantOptions(product, variantId, input) {
               ?.value,
           ) && normalized(variant.colorHex) !== normalized(input.colorHex),
     )
-  )
-    throw serviceError(
+  ) {
+    throw httpError(
       "Use the same swatch for variants with the same colour name.",
     );
+  }
 }

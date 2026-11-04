@@ -8,7 +8,6 @@ import {
 } from "../middlewares/validateReview.js";
 import * as reviews from "../controllers/reviewController.js";
 import { imageUpload } from "../middlewares/catalogUpload.js";
-
 const router = Router();
 router.use((_req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -26,11 +25,12 @@ const writes = rateLimit({
   },
 });
 function customer(req, res, next) {
-  if (req.user.role !== "customer")
+  if (req.user.role !== "customer") {
     return res.status(403).json({
       success: false,
       message: "Use a customer account to write a review.",
     });
+  }
   next();
 }
 router.get("/:id/reviews", validateCatalogId, validateReviewPage, reviews.list);

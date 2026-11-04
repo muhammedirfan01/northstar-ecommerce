@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import { catalogImageSchema } from "./Category.js";
-
 const reviewSchema = new mongoose.Schema(
   {
     productId: {
@@ -34,16 +33,37 @@ const reviewSchema = new mongoose.Schema(
       minlength: 10,
       maxlength: 1000,
     },
-    recommends: { type: Boolean, required: true },
+    recommends: {
+      type: Boolean,
+      required: true,
+    },
     images: {
       type: [catalogImageSchema],
       default: [],
       validate: (images) => images.length <= 3,
     },
-    isListed: { type: Boolean, default: true },
+    isListed: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { timestamps: true, optimisticConcurrency: true },
+  {
+    timestamps: true,
+    optimisticConcurrency: true,
+  },
 );
-reviewSchema.index({ productId: 1, userId: 1 }, { unique: true });
-reviewSchema.index({ productId: 1, isListed: 1, createdAt: -1 });
+reviewSchema.index(
+  {
+    productId: 1,
+    userId: 1,
+  },
+  {
+    unique: true,
+  },
+);
+reviewSchema.index({
+  productId: 1,
+  isListed: 1,
+  createdAt: -1,
+});
 export default mongoose.model("Review", reviewSchema);

@@ -1,12 +1,14 @@
 import mongoose from "mongoose";
-
 const cartItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
     required: true,
   },
-  variantId: { type: mongoose.Schema.Types.ObjectId, default: null },
+  variantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null,
+  },
   quantity: {
     type: Number,
     required: true,
@@ -31,11 +33,19 @@ const shoppingListSchema = new mongoose.Schema(
       validate: (items) => items.length <= 50,
     },
     wishlist: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+        },
+      ],
       default: [],
       validate: (ids) => ids.length <= 100,
     },
   },
-  { timestamps: true, optimisticConcurrency: true },
+  {
+    timestamps: true,
+    optimisticConcurrency: true,
+  },
 );
 export default mongoose.model("ShoppingList", shoppingListSchema);

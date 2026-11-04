@@ -19,29 +19,23 @@ export function publicUser(user) {
 // Check whether the user is logged in
 export async function requireAuth(req, res, next) {
   const token = readToken(req);
-
   if (!token?.userId || !/^[a-f0-9]{24}$/i.test(token.userId)) {
     clearAuthCookie(res);
-
     return res.status(401).json({
       success: false,
       message: "Please sign in.",
     });
   }
-
   const user = await User.findById(token.userId).select(
     "+passwordHash +authVersion +googleId",
   );
-
   if (!user || !user.isEmailVerified) {
     clearAuthCookie(res);
-
     return res.status(401).json({
       success: false,
       message: "Please sign in again.",
     });
   }
-
   if (user.isBlocked || user.deletedAt) {
     return res.status(403).json({
       success: false,
@@ -53,12 +47,10 @@ export async function requireAuth(req, res, next) {
   // Password changes and account restrictions increase this session counter.
   if ((token.authVersion ?? 0) !== (user.authVersion ?? 0)) {
     clearAuthCookie(res);
-    return res
-      .status(401)
-      .json({
-        success: false,
-        message: "Your session has changed. Please sign in again.",
-      });
+    return res.status(401).json({
+      success: false,
+      message: "Your session has changed. Please sign in again.",
+    });
   }
   req.user = user;
   next();
@@ -72,18 +64,15 @@ export function requireAdmin(req, res, next) {
       message: "Admin access required.",
     });
   }
-
   next();
 }
 // Google manages the email and password for Google accounts.
 export function requirePasswordAccount(req, res, next) {
   if (req.user.googleId) {
-    return res
-      .status(403)
-      .json({
-        success: false,
-        message: "Manage your email and password in your Google account.",
-      });
+    return res.status(403).json({
+      success: false,
+      message: "Manage your email and password in your Google account.",
+    });
   }
   next();
 }

@@ -1,15 +1,16 @@
+import { checkCategoryInput } from "../middlewares/validateCategory.js";
+import { checkProductInput } from "../middlewares/validateProduct.js";
+import { checkVariantInput } from "../middlewares/validateVariant.js";
+import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import sharp from "sharp";
 import Product from "../models/Product.js";
-import {
-  categorySchema,
-  productSchema,
-  variantSchema,
-} from "../middlewares/validateCatalog.js";
 import { prepareCatalogImage } from "../services/catalogImageService.js";
-import { updateVariantTotals } from "../services/productService.js";
-
+import { updateVariantTotals } from "../utils/product.js";
+const categorySchema = validationCase(checkCategoryInput);
+const productSchema = validationCase(checkProductInput);
+const variantSchema = validationCase(checkVariantInput);
 const categoryId = "111111111111111111111111";
 const validProduct = {
   name: "Laptop",
@@ -24,27 +25,34 @@ const validProduct = {
   specifications: [],
   retainedImageIds: [],
 };
-
 test("catalog validates prices as integer paise and rejects invalid price/stock", () => {
   const value = productSchema.parse(validProduct);
   assert.equal(value.price, 123456);
   assert.equal(value.stock, 10);
   for (const price of ["-1", "0", "1.234", "NaN", "1e3"])
     assert.equal(
-      productSchema.safeParse({ ...validProduct, price }).success,
+      productSchema.safeParse({
+        ...validProduct,
+        price,
+      }).success,
       false,
     );
   for (const stock of ["-1", "1.5", "1000001", "Infinity"])
     assert.equal(
-      productSchema.safeParse({ ...validProduct, stock }).success,
+      productSchema.safeParse({
+        ...validProduct,
+        stock,
+      }).success,
       false,
     );
   assert.equal(
-    productSchema.safeParse({ ...validProduct, regularPrice: "10" }).success,
+    productSchema.safeParse({
+      ...validProduct,
+      regularPrice: "10",
+    }).success,
     false,
   );
 });
-
 test("catalog rejects unknown fields and invalid names/IDs", () => {
   assert.equal(
     categorySchema.safeParse({
@@ -66,7 +74,10 @@ test("catalog rejects unknown fields and invalid names/IDs", () => {
     false,
   );
   assert.equal(
-    productSchema.safeParse({ ...validProduct, categoryId: "bad-id" }).success,
+    productSchema.safeParse({
+      ...validProduct,
+      categoryId: "bad-id",
+    }).success,
     false,
   );
   assert.equal(
@@ -80,7 +91,6 @@ test("catalog rejects unknown fields and invalid names/IDs", () => {
     false,
   );
 });
-
 test("variant stock replaces base stock and ignores hidden variants", () => {
   const product = new Product({
     stock: 100,
@@ -92,8 +102,18 @@ test("variant stock replaces base stock and ignores hidden variants", () => {
         stock: 3,
         isListed: true,
       },
-      { name: "Silver", pricePaise: 18000, stock: 0, isListed: true },
-      { name: "Hidden", pricePaise: 10000, stock: 99, isListed: false },
+      {
+        name: "Silver",
+        pricePaise: 18000,
+        stock: 0,
+        isListed: true,
+      },
+      {
+        name: "Hidden",
+        pricePaise: 10000,
+        stock: 99,
+        isListed: false,
+      },
     ],
   });
   updateVariantTotals(product);
@@ -106,24 +126,31 @@ test("variant stock replaces base stock and ignores hidden variants", () => {
   updateVariantTotals(product);
   assert.equal(product.stock, 0);
 });
-
 test("backend rejects a PDF disguised as an image", async () => {
   await assert.rejects(
     prepareCatalogImage({
       buffer: Buffer.from("%PDF-1.4 Fake PDF"),
       mimetype: "image/png",
     }),
-    { status: 400 },
+    {
+      status: 400,
+    },
   );
 });
-
 test("backend independently resizes valid image bytes", async () => {
   const buffer = await sharp({
-    create: { width: 1800, height: 1500, channels: 3, background: "white" },
+    create: {
+      width: 1800,
+      height: 1500,
+      channels: 3,
+      background: "white",
+    },
   })
     .png()
     .toBuffer();
-  const result = await prepareCatalogImage({ buffer });
+  const result = await prepareCatalogImage({
+    buffer,
+  });
   const metadata = await sharp(result).metadata();
   assert.equal(metadata.format, "webp");
   assert.equal(metadata.width, 1200);

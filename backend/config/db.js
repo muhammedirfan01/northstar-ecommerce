@@ -7,9 +7,10 @@ import Category from "../models/Category.js";
 import Product from "../models/Product.js";
 import Review from "../models/Review.js";
 import ShoppingList from "../models/ShoppingList.js";
-
 export default async function connectDB() {
-  await mongoose.connect(process.env.MONGODB_URI, { dbName: "northstar" });
+  await mongoose.connect(process.env.MONGODB_URI, {
+    dbName: "northstar",
+  });
   await Promise.all([
     User.init(),
     RegistrationOtp.init(),

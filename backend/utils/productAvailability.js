@@ -1,13 +1,21 @@
-
 export function productIsAvailable(product) {
-  if (!product) return false;
-
-  if (!product.isListed || !product.isPublished || product.stock <= 0) {
+  if (!product || product.deletedAt) {
     return false;
   }
-  if (!product.category?.isListed) return false;
-
-  if (product.category.parent && !product.category.parent.isListed) {
+  if (!product.isListed || !product.isPublished) {
+    return false;
+  }
+  if (!Number.isFinite(product.stock) || product.stock <= 0) {
+    return false;
+  }
+  const category = product.category;
+  if (!category || !category.isListed || category.deletedAt) {
+    return false;
+  }
+  if (
+    category.parent &&
+    (!category.parent.isListed || category.parent.deletedAt)
+  ) {
     return false;
   }
   return true;
@@ -16,7 +24,6 @@ export const categoryPopulation = {
   path: "category",
   populate: {
     path: "parent",
-    select: "name isListed"
-  }
+    select: "name isListed deletedAt",
+  },
 };
-  

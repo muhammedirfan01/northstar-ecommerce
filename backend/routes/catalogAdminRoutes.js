@@ -1,3 +1,6 @@
+import validateProduct from "../middlewares/validateProduct.js";
+import validateVariant from "../middlewares/validateVariant.js";
+import validateCategory from "../middlewares/validateCategory.js";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import * as reviews from "../controllers/reviewController.js";
@@ -7,13 +10,12 @@ import {
 } from "../middlewares/validateReview.js";
 import catalogUpload from "../middlewares/catalogUpload.js";
 import {
-  validateCatalog,
+  validateCatalogStatus,
   validateCatalogId,
   validateCatalogQuery,
 } from "../middlewares/validateCatalog.js";
 import * as category from "../controllers/categoryController.js";
 import * as product from "../controllers/productController.js";
-
 const router = Router();
 router.use((_req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -31,28 +33,27 @@ const writeLimit = rateLimit({
     message: "Too many catalog changes. Please wait and try again.",
   },
 });
-
 router.get("/categories", validateCatalogQuery, category.listCategories);
 router.post(
   "/categories",
   writeLimit,
   catalogUpload,
-  validateCatalog("category"),
-  category.saveCategory,
+  validateCategory,
+  category.addCategory,
 );
 router.patch(
   "/categories/:id",
   writeLimit,
   validateCatalogId,
   catalogUpload,
-  validateCatalog("category"),
+  validateCategory,
   category.saveCategory,
 );
 router.patch(
   "/categories/:id/status",
   writeLimit,
   validateCatalogId,
-  validateCatalog("status"),
+  validateCatalogStatus,
   category.setCategoryListed,
 );
 router.delete(
@@ -61,7 +62,6 @@ router.delete(
   validateCatalogId,
   category.deleteCategory,
 );
-
 router.get(
   "/products/:id/reviews",
   validateCatalogId,
@@ -73,7 +73,7 @@ router.patch(
   writeLimit,
   validateCatalogId,
   validateReviewId,
-  validateCatalog("status"),
+  validateCatalogStatus,
   reviews.moderate,
 );
 router.delete(
@@ -83,14 +83,13 @@ router.delete(
   validateReviewId,
   reviews.remove,
 );
-
 router.get("/products", validateCatalogQuery, product.listProducts);
 router.get("/products/:id", validateCatalogId, product.getProduct);
 router.post(
   "/products",
   writeLimit,
   catalogUpload,
-  validateCatalog("product"),
+  validateProduct,
   product.saveProduct,
 );
 router.patch(
@@ -98,14 +97,14 @@ router.patch(
   writeLimit,
   validateCatalogId,
   catalogUpload,
-  validateCatalog("product"),
+  validateProduct,
   product.saveProduct,
 );
 router.patch(
   "/products/:id/status",
   writeLimit,
   validateCatalogId,
-  validateCatalog("status"),
+  validateCatalogStatus,
   product.setProductListed,
 );
 router.delete(
@@ -119,7 +118,7 @@ router.post(
   writeLimit,
   validateCatalogId,
   catalogUpload,
-  validateCatalog("variant"),
+  validateVariant,
   product.saveVariant,
 );
 router.patch(
@@ -127,7 +126,7 @@ router.patch(
   writeLimit,
   validateCatalogId,
   catalogUpload,
-  validateCatalog("variant"),
+  validateVariant,
   product.saveVariant,
 );
 router.delete(
@@ -137,3 +136,15 @@ router.delete(
   product.deleteVariant,
 );
 export default router;
+router.post(
+  "/categories/:id/restore",
+  writeLimit,
+  validateCatalogId,
+  category.restoreCategory,
+);
+router.post(
+  "/products/:id/restore",
+  writeLimit,
+  validateCatalogId,
+  product.restoreProduct,
+);

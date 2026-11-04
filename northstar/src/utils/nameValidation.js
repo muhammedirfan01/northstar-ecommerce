@@ -1,5 +1,5 @@
-export function nameError(value) {
-  const name = value.trim();
+export function nameError(value) { // irfan navas 
+  const name = value.trim(); //name=irfan navas
   const letters = name.match(/\p{L}/gu) || [];
   if (name.length < 2 || name.length > 80 || letters.length < 2) {
     return "Enter a name with at least 2 letters and no more than 80 characters.";

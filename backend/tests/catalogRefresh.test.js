@@ -1,22 +1,28 @@
+import { checkCategoryInput } from "../middlewares/validateCategory.js";
+import { checkVariantInput } from "../middlewares/validateVariant.js";
+import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import Product from "../models/Product.js";
-import {
-  categorySchema,
-  variantSchema,
-} from "../middlewares/validateCatalog.js";
 import { defaultVariant, variantOptions } from "../utils/variantSelection.js";
 import { validateVariantOptions } from "../utils/variantOptions.js";
-import { updateVariantTotals } from "../services/productService.js";
+import { updateVariantTotals } from "../utils/product.js";
 import { productIsAvailable } from "../utils/productAvailability.js";
-import { describeCartItem } from "../services/shoppingService.js";
-
+import { describeCartItem } from "../utils/shopping.js";
+const categorySchema = validationCase(checkCategoryInput);
+const variantSchema = validationCase(checkVariantInput);
 const id = "111111111111111111111111";
 const variant = {
   name: "Burgundy / Large",
   options: [
-    { name: "Colour", value: "Burgundy" },
-    { name: "Size", value: "Large" },
+    {
+      name: "Colour",
+      value: "Burgundy",
+    },
+    {
+      name: "Size",
+      value: "Large",
+    },
   ],
   colorHex: "#660033",
   imageId: "",
@@ -27,7 +33,6 @@ const variant = {
   isDefault: true,
   retainedImageIds: [],
 };
-
 test("categories accept a parent and no longer accept descriptions", () => {
   const category = {
     name: "Gaming laptops",
@@ -37,11 +42,17 @@ test("categories accept a parent and no longer accept descriptions", () => {
   };
   assert.equal(categorySchema.safeParse(category).success, true);
   assert.equal(
-    categorySchema.safeParse({ ...category, parentId: "wrong" }).success,
+    categorySchema.safeParse({
+      ...category,
+      parentId: "wrong",
+    }).success,
     false,
   );
   assert.equal(
-    categorySchema.safeParse({ ...category, description: "Old field" }).success,
+    categorySchema.safeParse({
+      ...category,
+      description: "Old field",
+    }).success,
     false,
   );
 });
@@ -50,7 +61,12 @@ test("variants allow arbitrary option names but reject duplicate aliases and mal
   assert.equal(
     variantSchema.safeParse({
       ...variant,
-      options: [{ name: "Processor", value: "M3 Pro" }],
+      options: [
+        {
+          name: "Processor",
+          value: "M3 Pro",
+        },
+      ],
       colorHex: "",
     }).success,
     true,
@@ -59,15 +75,24 @@ test("variants allow arbitrary option names but reject duplicate aliases and mal
     variantSchema.safeParse({
       ...variant,
       options: [
-        { name: "RAM", value: "16 GB" },
-        { name: "Memory", value: "32 GB" },
+        {
+          name: "RAM",
+          value: "16 GB",
+        },
+        {
+          name: "Memory",
+          value: "32 GB",
+        },
       ],
       colorHex: "",
     }).success,
     false,
   );
   assert.equal(
-    variantSchema.safeParse({ ...variant, colorHex: "burgundy" }).success,
+    variantSchema.safeParse({
+      ...variant,
+      colorHex: "burgundy",
+    }).success,
     false,
   );
 });
@@ -90,22 +115,52 @@ test("combination validation ignores option order and name case", () => {
       validateVariantOptions(product, null, {
         ...variant,
         options: [
-          { name: "size", value: "large" },
-          { name: "color", value: "burgundy" },
+          {
+            name: "size",
+            value: "large",
+          },
+          {
+            name: "color",
+            value: "burgundy",
+          },
         ],
       }),
-    { status: 409 },
+    {
+      status: 409,
+    },
   );
-  assert.deepEqual(variantOptions({ colorName: "Black", memory: "16 GB" }), [
-    { name: "Colour", value: "Black" },
-    { name: "RAM", value: "16 GB" },
-  ]);
+  assert.deepEqual(
+    variantOptions({
+      colorName: "Black",
+      memory: "16 GB",
+    }),
+    [
+      {
+        name: "Colour",
+        value: "Black",
+      },
+      {
+        name: "RAM",
+        value: "16 GB",
+      },
+    ],
+  );
 });
 test("the chosen default controls display price, with an available fallback", () => {
   const product = new Product({
     variants: [
-      { name: "Standard", pricePaise: 10000, stock: 2, isListed: true },
-      { name: "Premium", pricePaise: 20000, stock: 3, isListed: true },
+      {
+        name: "Standard",
+        pricePaise: 10000,
+        stock: 2,
+        isListed: true,
+      },
+      {
+        name: "Premium",
+        pricePaise: 20000,
+        stock: 3,
+        isListed: true,
+      },
     ],
   });
   product.defaultVariantId = product.variants[1]._id;
@@ -121,7 +176,12 @@ test("the chosen default controls display price, with an available fallback", ()
 test("hidden parent categories invalidate customer products and variant images reach the cart", () => {
   const product = new Product({
     name: "Phone",
-    images: [{ url: "/base.png", publicId: "base" }],
+    images: [
+      {
+        url: "/base.png",
+        publicId: "base",
+      },
+    ],
     pricePaise: 200000,
     stock: 3,
     isPublished: true,
@@ -132,13 +192,23 @@ test("hidden parent categories invalidate customer products and variant images r
         pricePaise: 200000,
         stock: 3,
         isListed: true,
-        images: [{ url: "/burgundy.png", publicId: "burgundy" }],
+        images: [
+          {
+            url: "/burgundy.png",
+            publicId: "burgundy",
+          },
+        ],
       },
     ],
   });
   const data = product.toObject();
   data.variants = product.variants;
-  data.category = { isListed: true, parent: { isListed: false } };
+  data.category = {
+    isListed: true,
+    parent: {
+      isListed: false,
+    },
+  };
   assert.equal(productIsAvailable(data), false);
   data.category.parent.isListed = true;
   const item = describeCartItem(
