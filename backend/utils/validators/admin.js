@@ -1,3 +1,4 @@
+import { CustomerStatus } from "../../constants/statuses.js";
 import { validationError } from "../validation.js";
 import {
   checkFields,
@@ -12,7 +13,7 @@ export function checkCustomerQuery(input) {
     page: 1,
     limit: 10,
     search: "",
-    status: "all",
+    status: CustomerStatus.ALL,
   };
   if (input.page !== undefined)
     query.page = readQueryNumber(input.page, "page", 1, 10000, true);
@@ -21,11 +22,7 @@ export function checkCustomerQuery(input) {
   if (input.search !== undefined)
     query.search = readText(input.search, "search", 0, 100);
   if (input.status !== undefined)
-    query.status = readChoice(input.status, "status", [
-      "all",
-      "active",
-      "blocked",
-    ]);
+    query.status = readChoice(input.status, "status", Object.values(CustomerStatus));
   return query;
 }
 export function checkCustomerStatus(input) {

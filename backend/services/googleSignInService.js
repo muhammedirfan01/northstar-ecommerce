@@ -1,3 +1,4 @@
+import { RestrictionCode } from "../constants/statuses.js";
 // Application steps. Input is a plain object; the controller sends the response.
 import { getGoogleProfile } from "../services/googleAuthService.js";
 import User from "../models/User.js";
@@ -55,7 +56,7 @@ export async function googleSignIn(input) {
         status: 403,
         body: {
           success: false,
-          code: user.deletedAt ? "ACCOUNT_DELETED" : "ACCOUNT_BLOCKED",
+          code: user.deletedAt ? RestrictionCode.DELETED : RestrictionCode.BLOCKED,
           message: "Your account is restricted.",
         },
       };

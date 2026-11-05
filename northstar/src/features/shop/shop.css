@@ -337,10 +337,7 @@
 }
 .shop-filter-bar {
   display: grid;
-  grid-template-columns: minmax(220px, 2fr) minmax(160px, 1.3fr) minmax(
-      150px,
-      1.1fr
-    ) minmax(160px, 1.2fr) auto auto;
+  grid-template-columns: minmax(170px, 1.5fr) repeat(3, minmax(120px, 1fr)) auto auto;
   gap: 18px;
   align-items: end;
   margin: 0 0 26px;
@@ -348,6 +345,11 @@
   background: white;
   border: 1px solid #e5e1d9;
   border-radius: 9px;
+}
+@media (min-width: 1101px) {
+  .shop-filter-bar.has-subcategories {
+    grid-template-columns: minmax(170px, 1.5fr) repeat(4, minmax(120px, 1fr)) auto auto;
+  }
 }
 .shop-filter-bar > label {
   display: grid;
@@ -473,13 +475,19 @@
     gap: 14px;
     padding: 18px;
   }
-  .shop-filter-bar > label:nth-of-type(1) {
+  .shop-filter-bar.has-subcategories {
+    grid-template-areas: "search search" "category subcategory" "price sort" "apply clear";
+  }
+  .shop-filter-bar > .shop-filter-search {
     grid-area: search;
   }
-  .shop-filter-bar > label:nth-of-type(2) {
+  .shop-filter-bar > .shop-filter-category {
     grid-area: category;
   }
-  .shop-filter-bar > label:nth-of-type(3) {
+  .shop-filter-bar > .shop-filter-subcategory {
+    grid-area: subcategory;
+  }
+  .shop-filter-bar > .shop-filter-sort {
     grid-area: sort;
   }
   .shop-price-filter {

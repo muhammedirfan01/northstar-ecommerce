@@ -14,6 +14,7 @@ const titles = {
 
 // Controls the form shown inside the authentication popup.
 export default function AuthModal({
+  accountMessage,
   onClose,
   onAuthenticated,
   initialView = "login",
@@ -92,6 +93,7 @@ export default function AuthModal({
           ×
         </button>
         <h2 id="auth-title">{titles[view]}</h2>
+        {accountMessage && <p className="auth-error" role="alert">{accountMessage}</p>}
         {view === "login" && (
           <LoginForm
             busy={busy}

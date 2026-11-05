@@ -1,3 +1,4 @@
+import { CategoryStatus } from "../constants/statuses.js";
 import { validationError } from "../utils/validation.js";
 import { readFormBody } from "../utils/formValidation.js";
 import {
@@ -111,7 +112,7 @@ export async function listCategories(input) {
   const filter = {
     deletedAt: null,
   };
-  if (query.status === "deleted") {
+  if (query.status === CategoryStatus.DELETED) {
     filter.deletedAt = {
       $ne: null,
     };
@@ -122,10 +123,10 @@ export async function listCategories(input) {
       "i",
     );
   }
-  if (query.status === "listed") {
+  if (query.status === CategoryStatus.LISTED) {
     filter.isListed = true;
   }
-  if (query.status === "unlisted") {
+  if (query.status === CategoryStatus.UNLISTED) {
     filter.isListed = false;
   }
   if (query.options === "true") {

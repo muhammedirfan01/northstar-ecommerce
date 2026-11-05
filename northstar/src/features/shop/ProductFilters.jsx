@@ -32,7 +32,12 @@ const ranges = [
   },
 ];
 export default function ProductFilters({ params, categories, onApply }) {
-  const [category, setCategory] = useState(params.get("category") || "");
+  const selected = categories.find((item) => item.id === params.get("category"));
+  const [category, setCategory] = useState(selected?.parentId || params.get("category") || "");
+  const [subcategory, setSubcategory] = useState(params.get("subcategory") || (selected?.parentId ? selected.id : ""));
+  const [search, setSearch] = useState(params.get("search") || "");
+  const [sort, setSort] = useState(params.get("sort") || "latest");
+  const children = categories.filter((item) => category && item.parentId === category);
   const [minimum, setMinimum] = useState(params.get("minPrice") || "");
   const [maximum, setMaximum] = useState(params.get("maxPrice") || "");
   const [priceOpen, setPriceOpen] = useState(false);
@@ -78,45 +83,44 @@ export default function ProductFilters({ params, categories, onApply }) {
     }
     onApply(next);
   }
-  function clear(event) {
-    event.currentTarget.closest("form").reset();
-    setCategory(params.get("category") || "");
+  function clear() {
+    setSearch("");
+    setSort("latest");
+    setCategory("");
+    setSubcategory("");
     setMinimum("");
     setMaximum("");
     setError("");
     setPriceOpen(false);
     const next = new URLSearchParams();
-    // Clearing a category page keeps the customer in that category.
-    if (params.get("category")) {
-      next.set("category", params.get("category"));
-    }
     onApply(next);
   }
   return (
     <form
-      className="shop-filters shop-filter-bar"
+      className={`shop-filters shop-filter-bar${children.length ? " has-subcategories" : ""}`}
       aria-label="Product filters"
       onSubmit={apply}
     >
-      <label>
+      <label className="shop-filter-search">
         Search
         <input
           name="search"
           type="search"
           maxLength={100}
-          defaultValue={params.get("search") || ""}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
           placeholder="Search products..."
         />
       </label>
-      <label>
+      <label className="shop-filter-category">
         Category
         <select
           name="category"
           value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={(event) => { setCategory(event.target.value); setSubcategory(""); }}
         >
           <option value="">All categories</option>
-          {categories.map((category) => (
+          {categories.filter((item) => !item.parentId).map((category) => (
             <option value={category.id} key={category.id}>
               {category.parentName
                 ? `${category.parentName} › ${category.name}`
@@ -125,6 +129,15 @@ export default function ProductFilters({ params, categories, onApply }) {
           ))}
         </select>
       </label>
+      {children.length > 0 && (
+      <label className="shop-filter-subcategory">
+        Subcategory
+        <select name="subcategory" value={subcategory} onChange={(event) => setSubcategory(event.target.value)}>
+          <option value="">All subcategories</option>
+          {children.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+      </label>
+      )}
       <input type="hidden" name="minPrice" value={minimum} />
       <input type="hidden" name="maxPrice" value={maximum} />
       <div
@@ -222,9 +235,9 @@ export default function ProductFilters({ params, categories, onApply }) {
           </div>
         )}
       </div>
-      <label>
+      <label className="shop-filter-sort">
         Sort by
-        <select name="sort" defaultValue={params.get("sort") || "latest"}>
+        <select name="sort" value={sort} onChange={(event) => setSort(event.target.value)}>
           <option value="latest">Latest first</option>
           <option value="price-asc">Price: low to high</option>
           <option value="price-desc">Price: high to low</option>

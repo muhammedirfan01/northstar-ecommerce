@@ -1,3 +1,4 @@
+import { RestrictionCode } from "../constants/statuses.js";
 import { checkLogin } from "../utils/validators/login.js";
 // Application steps. Input is a plain object; the controller sends the response.
 import User from "../models/User.js";
@@ -31,7 +32,7 @@ export async function startLogin(input) {
       status: 403,
       body: {
         success: false,
-        code: user.deletedAt ? "ACCOUNT_DELETED" : "ACCOUNT_BLOCKED",
+        code: user.deletedAt ? RestrictionCode.DELETED : RestrictionCode.BLOCKED,
         message: "Your account is restricted",
       },
     };

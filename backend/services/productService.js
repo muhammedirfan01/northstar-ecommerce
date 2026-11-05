@@ -1,3 +1,6 @@
+import mongoose from "mongoose";
+import { statusSortPipeline } from "../utils/productStatus.js";
+import { ProductStatus } from "../constants/statuses.js";
 import { readFormBody } from "../utils/formValidation.js";
 import { checkProductInput } from "../utils/validators/product.js";
 import {
@@ -22,7 +25,7 @@ export async function listProducts(input) {
   const filter = {
     deletedAt: null,
   };
-  if (query.status === "deleted") {
+  if (query.status === ProductStatus.DELETED) {
     filter.deletedAt = {
       $ne: null,
     };
@@ -35,27 +38,30 @@ export async function listProducts(input) {
   }
   if (query.category) {
     filter.category = {
-      $in: await categoryAndChildren(query.category),
+      $in: (await categoryAndChildren(query.category)).map((id) => new mongoose.Types.ObjectId(String(id))),
     };
   }
-  if (query.status === "published") {
+  if (query.status === ProductStatus.PUBLISHED) {
     filter.isPublished = true;
     filter.isListed = true;
   }
-  if (query.status === "draft") {
+  if (query.status === ProductStatus.DRAFT) {
     filter.isPublished = false;
   }
-  if (query.status === "unlisted") {
+  if (query.status === ProductStatus.LISTED) filter.isListed = true;
+  if (query.status === ProductStatus.UNLISTED) {
     filter.isListed = false;
   }
-  if (query.status === "out-of-stock") {
+  if (query.status === ProductStatus.OUT_OF_STOCK) {
     filter.stock = 0;
   }
   const total = await Product.countDocuments(filter);
   const totalPages = Math.max(1, Math.ceil(total / query.limit));
   const page = Math.min(query.page, totalPages);
-  const products = await Product.find(filter)
-    .populate(categoryPopulation)
+  const products = query.sort.startsWith("status-")
+    ? await Product.populate(await Product.aggregate(statusSortPipeline(filter, query.sort, page, query.limit)), categoryPopulation)
+    : await Product.find(filter)
+df    .populate(categoryPopulation)
     .sort({
       createdAt: -1,
       _id: -1,
@@ -163,8 +169,8 @@ export async function saveProduct(input) {
     );
   }
   const count = retained.length + files.length;
-  if (count < 1 || count > 6) {
-    throw httpError("A product needs between 1 and 6 images.");
+  if (count < 3 || count > 6) {
+    throw httpError("A product needs between 3 and 6 images.");
   }
   const removed = product.images.filter(
     (image) => !data.retainedImageIds.includes(String(image._id)),
@@ -265,7 +271,8 @@ export async function deleteProduct(input) {
   }
   // Soft-delete preserves the product, variants and images for restoration.
   product.deletedAt = new Date();
-  await product.save();
+  // Legacy variant galleries must not prevent changing the deletion state.
+  await product.save({ validateModifiedOnly: true });
   return {
     status: 200,
     body: {
@@ -288,7 +295,7 @@ export async function restoreProduct(input) {
     };
   }
   product.deletedAt = null;
-  await product.save();
+  await product.save({ validateModifiedOnly: true });
   return {
     status: 200,
     body: {

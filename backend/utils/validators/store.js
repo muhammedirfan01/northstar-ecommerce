@@ -10,6 +10,7 @@ export function checkStoreQuery(input) {
   checkFields(input, [
     "search",
     "category",
+    "subcategory",
     "minPrice",
     "maxPrice",
     "sort",
@@ -24,6 +25,9 @@ export function checkStoreQuery(input) {
   }
   if (input.category !== undefined) {
     query.category = readId(input.category, "category", "Invalid category.");
+  }
+  if (input.subcategory !== undefined) {
+    query.subcategory = readId(input.subcategory, "subcategory", "Invalid subcategory.");
   }
   if (input.minPrice !== undefined) {
     query.minPrice = readQueryNumber(

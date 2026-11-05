@@ -1,3 +1,4 @@
+import { ProductStatus } from "../../constants/statuses.js";
 import { validationError } from "../validation.js";
 import {
   checkFields,
@@ -21,6 +22,7 @@ export function checkCatalogQuery(input) {
     "status",
     "category",
     "options",
+    "sort",
   ]);
   const query = {};
   if (input.search === undefined) {
@@ -39,18 +41,11 @@ export function checkCatalogQuery(input) {
     query.limit = readQueryNumber(input.limit, "limit", 1, 50, true);
   }
   query.status = readChoice(
-    input.status === undefined ? "all" : input.status,
+    input.status === undefined ? ProductStatus.ALL : input.status,
     "status",
-    [
-      "all",
-      "listed",
-      "unlisted",
-      "published",
-      "draft",
-      "out-of-stock",
-      "deleted",
-    ],
+    Object.values(ProductStatus),
   );
+  query.sort = readChoice(input.sort ?? "latest", "sort", ["latest", "status-asc", "status-desc"]);
   query.category = "";
   if (input.category !== undefined && input.category !== "") {
     query.category = readId(input.category, "category");

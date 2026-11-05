@@ -1,3 +1,6 @@
+import AccountRestrictionDialog from "./features/auth/AccountRestrictionDialog.jsx";
+import { AccountStatus } from "./constants/statuses.js";
+import { restrictionDetails } from "./api/restriction.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import API from "./api/API.js";
 import SignOutDialog from "./features/auth/SignOutDialog.jsx";
@@ -30,9 +33,9 @@ function AppContent() {
 
   // Shared account state lives here and is passed to screens through props.
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState("loading");
+  const [status, setStatus] = useState(AccountStatus.LOADING);
   const [error, setError] = useState("");
-  const [accountMessage, setAccountMessage] = useState("");
+  const [restriction, setRestriction] = useState(null);
   const accountRevision = useRef(0);
   const logoutPending = useRef(false);
   const [signOut, setSignOut] = useState(null);
@@ -43,9 +46,20 @@ function AppContent() {
     accountRevision.current++;
     setUser(account);
     setError("");
-    setAccountMessage("");
-    setStatus("ready");
+    setRestriction(null);
+    setStatus(AccountStatus.READY);
   }
+
+  const showRestriction = useCallback((failure) => {
+    const details = restrictionDetails(failure);
+    if (!details) return false;
+    accountRevision.current++;
+    setRestriction((current) => current || details);
+    setStatus(AccountStatus.RESTRICTED);
+    setError("");
+    setSignOut(null);
+    return true;
+  }, []);
 
   const refreshUser = useCallback(async (signal) => {
     const revision = accountRevision.current;
@@ -55,26 +69,47 @@ function AppContent() {
       if (signal?.aborted || revision !== accountRevision.current) return;
       setUser(response.data.data.user);
       setError("");
-      setAccountMessage("");
-      setStatus("ready");
+      setRestriction(null);
+      setStatus(AccountStatus.READY);
     } catch (failure) {
       if (signal?.aborted || revision !== accountRevision.current) return;
-      const code = failure.response?.data?.code;
-      const restricted = ["ACCOUNT_BLOCKED", "ACCOUNT_DELETED"].includes(code);
-      if (restricted || [401, 403].includes(failure.response?.status)) {
+      if (showRestriction(failure)) return;
+      if ([401, 403].includes(failure.response?.status)) {
         accountRevision.current++;
         setUser(null);
         setError("");
-        setStatus(restricted ? "restricted" : "ready");
-        if (restricted) {
-          setAccountMessage(failure.response?.data?.message || "This account is unavailable. Please contact support.");
-        }
+        setStatus(AccountStatus.READY);
         return;
       }
       setError(failure.response?.data?.message || failure.message);
-      setStatus("error");
+      setStatus(AccountStatus.ERROR);
     }
-  }, []);
+  }, [showRestriction]);
+
+  // Preserve the page and explain the restriction before ending the local session.
+  useEffect(() => {
+    const requestInterceptor = API.interceptors.request.use((config) => {
+      config.accountRevision = accountRevision.current;
+      return config;
+    });
+    const responseInterceptor = API.interceptors.response.use((response) => response, (failure) => {
+      if (!failure.config?.signal?.aborted && failure.config?.accountRevision === accountRevision.current) {
+        showRestriction(failure);
+      }
+      return Promise.reject(failure);
+    });
+    return () => {
+      API.interceptors.request.eject(requestInterceptor);
+      API.interceptors.response.eject(responseInterceptor);
+    };
+  }, [showRestriction]);
+
+  async function acknowledgeRestriction(signIn) {
+    // The server still denies restricted requests. Clear the cookie only after acknowledgement.
+    await API.post("/auth/logout", {});
+    updateAccount(null);
+    navigate(signIn ? "/?signin=1" : "/", { replace: true });
+  }
 
   // Restore the login once when the application starts.
   useEffect(() => {
@@ -200,16 +235,21 @@ function AppContent() {
   }
 
 
-  if (status === "loading") {
+  if (status === AccountStatus.LOADING) {
     return <main className="account-loading" role="status">Checking your account…</main>;
+  }
+
+  if (restriction) {
+    return (
+      <>
+        <main className="account-loading">Your account is unavailable.</main>
+        <AccountRestrictionDialog restriction={restriction} onContinue={acknowledgeRestriction} />
+      </>
+    );
   }
 
   return (
     <>
-      {accountMessage && <p className="shop-error" role="alert">{accountMessage}</p>}
-      {status === "restricted" && (location.pathname !== "/" || location.search !== "?signin=1") && (
-        <Navigate to="/?signin=1" replace />
-      )}
           <Routes>
             <Route element={<StoreLayout completeLogin={completeLogin} user={user} status={status} logout={requestLogout} cartCount={cartCount} wishlistIds={wishlistIds} />}>
               <Route path="/" element={<Home wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />} />

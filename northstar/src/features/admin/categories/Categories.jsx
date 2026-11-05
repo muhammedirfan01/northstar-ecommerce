@@ -1,3 +1,4 @@
+import { CategoryStatus, ProductStatusLabel } from "../../../constants/statuses.js";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Plus, Search, X } from "lucide-react";
@@ -42,12 +43,12 @@ function categoryConfirmation(action) {
 }
 function categoryStatus(category) {
   if (category.deletedAt) {
-    return "Deleted";
+    return ProductStatusLabel[CategoryStatus.DELETED];
   }
   if (!category.isListed) {
-    return "Unlisted";
+    return ProductStatusLabel[CategoryStatus.UNLISTED];
   }
-  return "Listed";
+  return ProductStatusLabel[CategoryStatus.LISTED];
 }
 export default function Categories() {
   const [data, setData] = useState({
@@ -66,7 +67,7 @@ export default function Categories() {
   });
   const [query, setQuery] = useState({
     search: "",
-    status: "all",
+    status: CategoryStatus.ALL,
     page: 1,
     limit: 10,
   });
@@ -215,20 +216,20 @@ export default function Categories() {
               })
             }
           >
-            <option value="all">All statuses</option>
-            <option value="listed">Listed</option>
-            <option value="unlisted">Unlisted</option>
-            <option value="deleted">Deleted</option>
+            <option value={CategoryStatus.ALL}>All statuses</option>
+            <option value={CategoryStatus.LISTED}>Listed</option>
+            <option value={CategoryStatus.UNLISTED}>Unlisted</option>
+            <option value={CategoryStatus.DELETED}>Deleted</option>
           </select>
         </label>
         <button
           className="cm-clear"
           type="button"
-          disabled={!query.search && query.status === "all"}
+          disabled={!query.search && query.status === CategoryStatus.ALL}
           onClick={() =>
             change({
               search: "",
-              status: "all",
+              status: CategoryStatus.ALL,
             })
           }
         >

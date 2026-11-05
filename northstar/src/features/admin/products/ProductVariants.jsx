@@ -79,6 +79,10 @@ export default function ProductVariants() {
   }
   async function save(event) {
     event.preventDefault();
+    if (images.filter((image) => image.id || image.file).length < 3) {
+      setError("Each variant requires at least three images.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -233,7 +237,7 @@ export default function ProductVariants() {
               <section className="catalog-wide">
                 <h3>Images for this variant / colour</h3>
                 <p className="catalog-help">
-                  Upload up to six images, then crop them. Other variants can
+                  Upload at least three and up to six images, then crop them. Other variants can
                   have their own images. The first image is shown on product
                   cards and in the cart.
                 </p>
@@ -258,8 +262,8 @@ export default function ProductVariants() {
                 </select>
               </label>
               <p className="catalog-help catalog-wide">
-                If this variant has no uploaded images, the selected product
-                image is used.
+                Each variant needs its own three to six images. The fallback
+                image does not count toward this requirement.
               </p>
               <label>
                 Selling price (₹) *

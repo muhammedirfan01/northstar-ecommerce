@@ -1,3 +1,4 @@
+import { RestrictionCode } from "../constants/statuses.js";
 export { publicUser } from "../utils/user.js";
 import User from "../models/User.js";
 import { readToken, clearAuthCookie } from "../utils/jwt.js";
@@ -27,7 +28,7 @@ export async function requireAuth(req, res, next) {
   if (user.isBlocked || user.deletedAt) {
     return res.status(403).json({
       success: false,
-      code: user.deletedAt ? "ACCOUNT_DELETED" : "ACCOUNT_BLOCKED",
+      code: user.deletedAt ? RestrictionCode.DELETED : RestrictionCode.BLOCKED,
       message: "Your account is restricted.",
     });
   }

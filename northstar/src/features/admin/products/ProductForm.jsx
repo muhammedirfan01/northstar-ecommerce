@@ -109,8 +109,8 @@ export default function ProductForm() {
       );
       return;
     }
-    if (!images.length) {
-      setError("Add at least one product image.");
+    if (images.filter((image) => image.id || image.file).length < 3) {
+      setError("Add at least three product images.");
       return;
     }
     if (
@@ -278,7 +278,7 @@ export default function ProductForm() {
           <ProductPresentationFields form={form} change={change} />
           <section className="catalog-card">
             <h2>2. Product images</h2>
-            <p>Add 1–6 images. The first image is used on product listings.</p>
+            <p>Add 3–6 images. The first image is used on product listings.</p>
             <ImageUploader
               images={images}
               onChange={setImages}

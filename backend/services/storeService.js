@@ -60,6 +60,11 @@ export async function listProducts(input) {
       },
     ];
   }
+  if (query.subcategory) {
+    // Intersect the child with parent and visibility filters; never replace them.
+    filter.$and ||= [];
+    filter.$and.push({ category: query.subcategory });
+  }
   if (query.search) {
     filter.name = new RegExp(
       query.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),

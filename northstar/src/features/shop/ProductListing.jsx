@@ -109,7 +109,7 @@ export default function ProductListing({ wishlistIds, addToCart, toggleWishlist 
       )}
       <div className="shop-catalog-layout">
         <ProductFilters
-          key={query}
+          key={`${query}:${categories.map((item) => item.id).join(",")}`}
           params={params}
           categories={categories}
           onApply={filter}

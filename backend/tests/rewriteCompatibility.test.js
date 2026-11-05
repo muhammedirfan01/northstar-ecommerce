@@ -130,7 +130,7 @@ test("wishlist read, add and remove actions preserve results and save only chang
   assert.equal(saves, 2);
 });
 
-test("variant creation and deletion preserve price, stock and the default selection", async () => {
+test("variant image validation, editing and deletion preserve price, stock and the default selection", async () => {
   const product = new Product({
     name: "Laptop",
     description: "A sample laptop.",
@@ -138,17 +138,18 @@ test("variant creation and deletion preserve price, stock and the default select
     images: [{ publicId: "sample", url: "/sample.webp" }],
     pricePaise: 10000,
     stock: 0,
-    variants: [],
+    variants: [{ name: "Large", options: [{ name: "Size", value: "Large" }], pricePaise: 10000, stock: 0, images: [1,2,3].map((n) => ({ publicId: "sample-" + n, url: "/sample-" + n + ".webp" })) }],
     isListed: true,
     isPublished: true,
   });
   mock.method(Product, "findById", async () => product);
   mock.method(product, "save", async () => product);
   mock.method(product, "populate", async () => product);
+  await assert.rejects(saveVariant({ params: { id: String(product._id) }, files: [], body: { name: "Small", price: "120", regularPrice: "150", stock: "3", isListed: true } }, response()), /at least three images/);
   const created = response();
   await saveVariant(
     {
-      params: { id: String(product._id) },
+      params: { id: String(product._id), variantId: String(product.variants[0]._id) },
       files: [],
       body: {
         name: "Large",
@@ -164,7 +165,7 @@ test("variant creation and deletion preserve price, stock and the default select
     },
     created,
   );
-  assert.equal(created.statusCode, 201);
+  assert.equal(created.statusCode, 200);
   assert.equal(created.body.data.product.stock, 3);
   assert.equal(created.body.data.product.pricePaise, 12000);
   const variantId = created.body.data.product.variants[0].id;

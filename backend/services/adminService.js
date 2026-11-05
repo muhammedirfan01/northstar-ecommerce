@@ -1,3 +1,4 @@
+import { CustomerStatus } from "../constants/statuses.js";
 import {
   checkCustomerQuery,
   checkCustomerId,
@@ -42,8 +43,8 @@ export async function getCustomers(input) {
     role: "customer",
     deletedAt: null,
   };
-  if (status !== "all") {
-    filter.isBlocked = status === "blocked";
+  if (status !== CustomerStatus.ALL) {
+    filter.isBlocked = status === CustomerStatus.BLOCKED;
   }
   if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

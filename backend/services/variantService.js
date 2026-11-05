@@ -59,6 +59,9 @@ export async function saveVariant(input) {
       409,
     );
   }
+  if (retained.length + files.length < 3) {
+    throw httpError("Each variant requires at least three images.");
+  }
   if (retained.length + files.length > 6) {
     throw httpError("A variant can have up to six images.");
   }

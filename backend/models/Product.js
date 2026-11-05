@@ -71,7 +71,10 @@ const variantSchema = new mongoose.Schema({
   images: {
     type: [catalogImageSchema],
     default: [],
-    validate: (images) => images.length <= 6,
+    validate: {
+      validator: (images) => images.length >= 3 && images.length <= 6,
+      message: "Each variant requires three to six images.",
+    },
   },
   pricePaise: price,
   regularPricePaise: {
@@ -159,7 +162,10 @@ const productSchema = new mongoose.Schema(
     },
     images: {
       type: [catalogImageSchema],
-      validate: (value) => value.length >= 1 && value.length <= 6,
+      validate: {
+        validator: (value) => value.length >= 3 && value.length <= 6,
+        message: "A product needs between 3 and 6 images.",
+      },
     },
     pricePaise: price,
     regularPricePaise: {

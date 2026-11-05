@@ -1,3 +1,4 @@
+import { CustomerStatus } from "../../../constants/statuses.js";
 import { useEffect, useState } from "react";
 import { Search, X } from "lucide-react";
 import API from "../../../api/API.js";
@@ -20,7 +21,7 @@ const emptyData = {
 export default function Customers() {
   const [data, setData] = useState(emptyData);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState(CustomerStatus.ALL);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -96,7 +97,7 @@ export default function Customers() {
   }
   function clearFilters() {
     setSearch("");
-    setStatus("all");
+    setStatus(CustomerStatus.ALL);
     setPage(1);
     setLoading(true);
     setError("");
@@ -261,15 +262,15 @@ export default function Customers() {
             value={status}
             onChange={(event) => changeStatus(event.target.value)}
           >
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="blocked">Blocked</option>
+            <option value={CustomerStatus.ALL}>All statuses</option>
+            <option value={CustomerStatus.ACTIVE}>Active</option>
+            <option value={CustomerStatus.BLOCKED}>Blocked</option>
           </select>
         </label>
         <button
           className="cm-clear"
           type="button"
-          disabled={!search && status === "all"}
+          disabled={!search && status === CustomerStatus.ALL}
           onClick={clearFilters}
         >
           Clear filters

@@ -1,3 +1,4 @@
+import { ProductStatus, ProductStatusLabel } from "../../../constants/statuses.js";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Plus, Search, X } from "lucide-react";
@@ -41,15 +42,16 @@ function productConfirmation(action) {
 }
 function productStatus(product) {
   if (product.deletedAt) {
-    return "Deleted";
+    return ProductStatusLabel[ProductStatus.DELETED];
   }
   if (!product.isListed) {
-    return "Unlisted";
+    return ProductStatusLabel[ProductStatus.UNLISTED];
   }
   if (!product.isPublished) {
-    return "Draft";
+    return ProductStatusLabel[ProductStatus.DRAFT];
   }
-  return "Published";
+  if (product.stock === 0) return ProductStatusLabel[ProductStatus.OUT_OF_STOCK];
+  return ProductStatusLabel[ProductStatus.PUBLISHED];
 }
 const money = (paise) =>
   (paise / 100).toLocaleString("en-IN", {
@@ -61,7 +63,8 @@ export default function Products() {
   const [params] = useSearchParams();
   const [query, setQuery] = useState({
     search: "",
-    status: "all",
+    status: ProductStatus.ALL,
+    sort: "latest",
     category: params.get("category") || "",
     page: 1,
     limit: 10,
@@ -198,6 +201,13 @@ export default function Products() {
         </p>
       )}
       <div className="cm-toolbar">
+        <label className="cm-filter">Sort by
+          <select value={query.sort} onChange={(event) => change({ sort: event.target.value })}>
+            <option value="latest">Latest first</option>
+            <option value="status-asc">Status: published first</option>
+            <option value="status-desc">Status: unlisted first</option>
+          </select>
+        </label>
         <div className="cm-search">
           <Search size={16} />
           <input
@@ -257,23 +267,19 @@ export default function Products() {
               })
             }
           >
-            <option value="all">All statuses</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-            <option value="unlisted">Unlisted</option>
-            <option value="out-of-stock">Out of stock</option>
-            <option value="deleted">Deleted</option>
+            {Object.values(ProductStatus).filter((value) => value !== ProductStatus.LISTED).map((value) => <option key={value} value={value}>{ProductStatusLabel[value]}</option>)}
           </select>
         </label>
         <button
           className="cm-clear"
           type="button"
-          disabled={!query.search && !query.category && query.status === "all"}
+          disabled={!query.search && !query.category && query.status === ProductStatus.ALL && query.sort === "latest"}
           onClick={() =>
             change({
               search: "",
               category: "",
-              status: "all",
+              status: ProductStatus.ALL,
+              sort: "latest",
             })
           }
         >
@@ -294,7 +300,7 @@ export default function Products() {
       <div className="cm-table-card" aria-busy={loading}>
         <div className="cm-table-scroll">
           <table className="cm-table">
-            <caption className="cm-sr-only">Products, latest first</caption>
+            <caption className="cm-sr-only">Products</caption>
             <thead>
               <tr>
                 <th>Product</th>

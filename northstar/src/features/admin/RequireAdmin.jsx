@@ -1,9 +1,10 @@
+import { AccountStatus } from "../../constants/statuses.js";
 import { Navigate, Outlet } from "react-router";
 export default function RequireAdmin({ user, status, error, refreshUser }) {
-  if (status === "loading") {
+  if (status === AccountStatus.LOADING) {
     return <p role="status">Checking your account…</p>;
   }
-  if (status === "error") {
+  if (status === AccountStatus.ERROR) {
     return (
       <div role="alert">
         <p>{error}</p>
