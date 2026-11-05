@@ -1,5 +1,5 @@
 import ShopProductCard from "./ShopProductCard.jsx";
-export default function NewArrivals({ products }) {
+export default function NewArrivals({ products, wishlistIds, addToCart, toggleWishlist }) {
   return (
     <section className="new-arrivals">
       <div className="section-heading">
@@ -10,7 +10,7 @@ export default function NewArrivals({ products }) {
 
       <div className="product-grid arrivals-grid">
         {products.map((product) => (
-          <ShopProductCard key={product.id} product={product} />
+          <ShopProductCard key={product.id} product={product} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />
         ))}
       </div>
     </section>

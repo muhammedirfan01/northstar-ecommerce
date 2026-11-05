@@ -1,7 +1,6 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Heart } from "lucide-react";
-import { ShoppingContext } from "../../context/ShoppingContext.js";
 import {
   selectedVariant,
   variantImage,
@@ -9,9 +8,7 @@ import {
 } from "../../utils/variants.js";
 import { money } from "../../utils/money.js";
 import "./shop.css";
-export default function ShopProductCard({ product }) {
-  const { wishlistIds, toggleWishlist, addToCart } =
-    useContext(ShoppingContext);
+export default function ShopProductCard({ product, wishlistIds, addToCart, toggleWishlist }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const navigate = useNavigate();
@@ -36,7 +33,7 @@ export default function ShopProductCard({ product }) {
         setNotice("Added to cart.");
       }
     } catch (error) {
-      setNotice(error.message);
+      setNotice(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

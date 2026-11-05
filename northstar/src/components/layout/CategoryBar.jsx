@@ -13,8 +13,8 @@ export default function CategoryBar({ categories = [] }) {
           >
             <img
               className="category-icon"
-              src={category.image?.url || "/accessories_icon.png"}
-              alt=""
+              src={category.image?.url}
+              alt={`{category} is missing`}
             />
             <span>{category.name}</span>
           </Link>

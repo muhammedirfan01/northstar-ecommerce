@@ -1,9 +1,5 @@
-import { useContext } from "react";
 import { Navigate, Outlet } from "react-router";
-import { AuthContext } from "../../context/AuthContext.js";
-export default function RequireAdmin() {
-  const { user, status, error, refreshUser, signingOut } =
-    useContext(AuthContext);
+export default function RequireAdmin({ user, status, error, refreshUser }) {
   if (status === "loading") {
     return <p role="status">Checking your account…</p>;
   }
@@ -18,7 +14,7 @@ export default function RequireAdmin() {
     );
   }
   if (!user) {
-    return signingOut ? null : <Navigate to="/?signin=1" replace />;
+    return <Navigate to="/?signin=1" replace />;
   }
   if (user.role !== "admin") {
     return <Navigate to="/" replace />;

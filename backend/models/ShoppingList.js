@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const cartItemSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -13,7 +14,7 @@ const cartItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 1,
-    max: 5,
+    
     validate: Number.isInteger,
   },
 });

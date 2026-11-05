@@ -10,25 +10,46 @@ const titles = {
   otp: "Verify Your OTP",
   forgot: "Reset Password",
   reset: "Set New Password",
-  success: "Email Verified Successfully",
-  resetSuccess: "Password Reset Successfully",
 };
 
-// This component only chooses which form to display.
+// Controls the form shown inside the authentication popup.
 export default function AuthModal({
   onClose,
   onAuthenticated,
   initialView = "login",
 }) {
   const dialogRef = useRef(null);
+  // view is the name of the form currently displayed.
   const [view, setView] = useState(initialView);
+  // busy is true while a form is waiting for a server response.
   const [busy, setBusy] = useState(false);
+  // Keep the information needed for OTP verification and password reset.
   const [challenge, setChallenge] = useState(null);
   const [purpose, setPurpose] = useState("registration");
   const [recovery, setRecovery] = useState(null);
+  // Open the native dialog when this component appears.
   useEffect(() => {
     dialogRef.current.showModal();
   }, []);
+  function showLogin() {
+    setView("login");
+  }
+
+  function showRegister() {
+    setView("register");
+  }
+
+  function showForgotPassword() {
+    setView("forgot");
+  }
+
+  function handleCancel(event) {
+    // Wait for the current request before allowing Escape to close the dialog.
+    if (busy) {
+      event.preventDefault();
+    }
+  }
+
   function signedIn(user) {
     onClose();
     onAuthenticated(user);
@@ -49,7 +70,7 @@ export default function AuthModal({
       setRecovery(result);
       setView("reset");
     } else {
-      setView("success");
+      setView("login");
     }
   }
   return (
@@ -57,11 +78,7 @@ export default function AuthModal({
       className="auth-modal"
       ref={dialogRef}
       onClose={onClose}
-      onCancel={(event) => {
-        if (busy) {
-          event.preventDefault();
-        }
-      }}
+      onCancel={handleCancel}
       aria-labelledby="auth-title"
     >
       <div className="auth-modal-content">
@@ -74,15 +91,14 @@ export default function AuthModal({
         >
           ×
         </button>
-        <p className="auth-brand">NORTHSTAR</p>
         <h2 id="auth-title">{titles[view]}</h2>
         {view === "login" && (
           <LoginForm
             busy={busy}
             setBusy={setBusy}
             onSuccess={signedIn}
-            onRegister={() => setView("register")}
-            onForgotPassword={() => setView("forgot")}
+            onRegister={showRegister}
+            onForgotPassword={showForgotPassword}
           />
         )}
         {view === "register" && (
@@ -91,7 +107,7 @@ export default function AuthModal({
             setBusy={setBusy}
             onSuccess={signedIn}
             onCreated={registrationStarted}
-            onLogin={() => setView("login")}
+            onLogin={showLogin}
           />
         )}
         {view === "forgot" && (
@@ -99,7 +115,7 @@ export default function AuthModal({
             busy={busy}
             setBusy={setBusy}
             onRequested={recoveryStarted}
-            onLogin={() => setView("login")}
+            onLogin={showLogin}
           />
         )}
         {view === "otp" && (
@@ -110,7 +126,7 @@ export default function AuthModal({
             busy={busy}
             setBusy={setBusy}
             onVerified={codeVerified}
-            onLogin={() => setView("login")}
+            onLogin={showLogin}
           />
         )}
         {view === "reset" && (
@@ -118,27 +134,10 @@ export default function AuthModal({
             recovery={recovery}
             busy={busy}
             setBusy={setBusy}
-            onComplete={() => setView("resetSuccess")}
-            onRestart={() => setView("forgot")}
-            onLogin={() => setView("login")}
+            onComplete={showLogin}
+            onRestart={showForgotPassword}
+            onLogin={showLogin}
           />
-        )}
-        {view === "success" && (
-          <p role="status">Your account is ready. Sign in to continue.</p>
-        )}
-        {view === "resetSuccess" && (
-          <p role="status">
-            Your password has been updated. Sign in with your new password.
-          </p>
-        )}
-        {(view === "success" || view === "resetSuccess") && (
-          <button
-            className="auth-submit"
-            type="button"
-            onClick={() => setView("login")}
-          >
-            CONTINUE TO SIGN IN →
-          </button>
         )}
       </div>
     </dialog>

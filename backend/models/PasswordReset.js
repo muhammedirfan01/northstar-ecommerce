@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const passwordResetSchema = new mongoose.Schema(
   {
     email: {

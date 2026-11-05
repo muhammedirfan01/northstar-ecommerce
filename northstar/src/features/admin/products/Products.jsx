@@ -113,7 +113,7 @@ export default function Products() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -166,7 +166,7 @@ export default function Products() {
       setAction(null);
       refresh();
     } catch (error) {
-      setActionError(error.message);
+      setActionError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

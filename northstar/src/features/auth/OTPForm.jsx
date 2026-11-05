@@ -33,14 +33,18 @@ export default function OTPForm({
       };
       let result;
       if (purpose === "recovery") {
-        result = (await API.post("/auth/forgot-password/verify-otp", body)).data
-          .data;
+        const response = await API.post(
+          "/auth/forgot-password/verify-otp",
+          body,
+        );
+        result = response.data.data;
       } else {
-        result = (await API.post("/auth/register/verify-otp", body)).data.data;
+        const response = await API.post("/auth/register/verify-otp", body);
+        result = response.data.data;
       }
       onVerified(result);
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }
@@ -54,21 +58,25 @@ export default function OTPForm({
       };
       let result;
       if (purpose === "recovery") {
-        result = (await API.post("/auth/forgot-password/resend-otp", body)).data
-          .data;
+        const response = await API.post(
+          "/auth/forgot-password/resend-otp",
+          body,
+        );
+        result = response.data.data;
       } else {
-        result = (await API.post("/auth/register/resend-otp", body)).data.data;
+        const response = await API.post("/auth/register/resend-otp", body);
+        result = response.data.data;
       }
       setTiming(otpTiming(result));
       setNow(Date.now());
     } catch (error) {
-      if (error.data?.resendAfter) {
+      if (error.response?.data?.data?.resendAfter) {
         setTiming({
           ...timing,
-          resendAt: Date.now() + error.data.resendAfter * 1000,
+          resendAt: Date.now() + error.response?.data?.data.resendAfter * 1000,
         });
       }
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

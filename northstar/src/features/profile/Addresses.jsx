@@ -1,11 +1,9 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { AuthContext } from "../../context/AuthContext.js";
 import API from "../../api/API.js";
 import AddressForm from "./AddressForm.jsx";
 import "./addresses.css";
-export default function Addresses() {
-  const { user } = useContext(AuthContext);
+export default function Addresses({ user }) {
   const [data, setData] = useState({
     addresses: [],
     version: 0,
@@ -35,7 +33,7 @@ export default function Addresses() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setLoadError(error.message);
+          setLoadError(error.response?.data?.message || error.message);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -55,13 +53,13 @@ export default function Addresses() {
     setReload((value) => value + 1);
   }
   function showError(error) {
-    if (error.status === 409) {
+    if (error.response?.status === 409) {
       reloadAddresses();
       setMessage(
         "Your addresses changed. We reloaded them. Choose Edit again before saving.",
       );
     } else {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     }
   }
   async function saveAddress(values) {
@@ -74,9 +72,11 @@ export default function Addresses() {
       };
       let result;
       if (editing) {
-        result = (await API.patch(`/addresses/${editing.id}`, body)).data.data;
+        const response = await API.patch(`/addresses/${editing.id}`, body);
+        result = response.data.data;
       } else {
-        result = (await API.post("/addresses", body)).data.data;
+        const response = await API.post("/addresses", body);
+        result = response.data.data;
       }
       setData(result);
       setEditing(null);
@@ -93,13 +93,10 @@ export default function Addresses() {
     setSaving(true);
     setError("");
     try {
-      setData(
-        (
-          await API.patch(`/addresses/${address.id}/default`, {
-            version: data.version,
-          })
-        ).data.data,
-      );
+      const response = await API.patch(`/addresses/${address.id}/default`, {
+        version: data.version,
+      });
+      setData(response.data.data);
       setMessage("Default address updated.");
     } catch (error) {
       showError(error);
@@ -111,15 +108,12 @@ export default function Addresses() {
     setSaving(true);
     setError("");
     try {
-      setData(
-        (
-          await API.delete(`/addresses/${deleting.id}`, {
-            data: {
-              version: data.version,
-            },
-          })
-        ).data.data,
-      );
+      const response = await API.delete(`/addresses/${deleting.id}`, {
+        data: {
+          version: data.version,
+        },
+      });
+      setData(response.data.data);
       setDeleting(null);
       setMessage(
         "Address removed. Any remaining address will keep a default selection.",

@@ -1,4 +1,3 @@
-import { useContext } from "react";
 import { Link, NavLink, Outlet } from "react-router";
 import {
   Compass,
@@ -13,7 +12,6 @@ import {
   Settings2,
   LogOut,
 } from "lucide-react";
-import { AuthContext } from "../../context/AuthContext.js";
 import ProfileAvatar from "../profile/ProfileAvatar.jsx";
 import "./admin.css";
 import "./management.css";
@@ -78,8 +76,7 @@ const navigationSystems = [
     items: system,
   },
 ];
-export default function AdminLayout() {
-  const { user, requestLogout } = useContext(AuthContext);
+export default function AdminLayout({ user, logout }) {
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
@@ -106,7 +103,6 @@ export default function AdminLayout() {
                       >
                         <Icon size={19} strokeWidth={1.9} aria-hidden="true" />
                         <span>{label}</span>
-                        <small>Soon</small>
                       </span>
                     );
                   }
@@ -143,10 +139,9 @@ export default function AdminLayout() {
           <button
             className="admin-logout"
             type="button"
-            onClick={requestLogout}
+            onClick={logout}
             aria-label="Sign out"
-            aria-haspopup="dialog"
-          >
+            >
             <LogOut size={20} aria-hidden="true" />
           </button>
         </div>

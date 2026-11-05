@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const addressSchema = new mongoose.Schema(
   {
     fullName: {
@@ -29,11 +30,13 @@ const addressSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      slug:true
     },
     postalCode: {
       type: String,
       required: true,
       match: /^[1-9]\d{5}$/,
+     
     },
     country: {
       type: String,

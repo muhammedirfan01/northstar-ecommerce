@@ -10,14 +10,19 @@ import {
 } from "../controllers/registrationOtpController.js";
 import { controllerData } from "./controllerTestHelpers.js";
 import { hashOtp } from "../utils/otp.js";
-import { validateProfileDetails } from "../middlewares/validateProfile.js";
-import validateRegistration from "../middlewares/validateRegistration.js";
+import { checkProfileDetails } from "../utils/validators/profile.js";
+import { checkRegistration } from "../utils/validators/registration.js";
 import { publicUser, requirePasswordAccount } from "../middlewares/auth.js";
 import { otpTiming } from "../../northstar/src/utils/otpTiming.js";
 import { nameError } from "../../northstar/src/utils/nameValidation.js";
 const registerAccount = (body) =>
   controllerData(register, {
-    body,
+    body: {
+      name: "Asha Devi",
+      password: "Password8",
+      acceptedTerms: true,
+      ...body,
+    },
   });
 const verifyRegistration = (body) =>
   controllerData(verifyController, {
@@ -185,39 +190,26 @@ test("OTP timing supports both backend response formats and preserves expiry", (
     Date.parse(expired),
   );
 });
-function validate(middleware, body) {
-  let passed = false;
-  const res = {
-    status() {
-      return this;
-    },
-    json() {
-      return this;
-    },
-  };
-  middleware(
-    {
-      body,
-    },
-    res,
-    () => {
-      passed = true;
-    },
-  );
-  return passed;
+function validate(check, body) {
+  try {
+    check(body);
+    return true;
+  } catch {
+    return false;
+  }
 }
 test("profile and signup reject invalid names and accept international names", () => {
   for (const name of ["  ", "12345", "A1", "---", "A", "<script>"]) {
     assert.ok(nameError(name));
     assert.equal(
-      validate(validateProfileDetails, {
+      validate(checkProfileDetails, {
         name,
         phone: "",
       }),
       false,
     );
     assert.equal(
-      validate(validateRegistration, {
+      validate(checkRegistration, {
         name,
         email: "asha@example.com",
         password: "Password8",
@@ -236,7 +228,7 @@ test("profile and signup reject invalid names and accept international names", (
   ]) {
     assert.equal(nameError(name), "");
     assert.equal(
-      validate(validateProfileDetails, {
+      validate(checkProfileDetails, {
         name,
         phone: "",
       }),

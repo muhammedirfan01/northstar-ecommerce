@@ -1,3 +1,4 @@
+import { images } from "../../assets/images.js";
 import { Link } from "react-router";
 export default function Footer() {
   return (
@@ -18,21 +19,21 @@ export default function Footer() {
               title="Coming soon"
               aria-disabled="true"
             >
-              <img src="/x_icon.png" alt="X" />
+              <img src={images.x} alt="X" />
             </span>
             <span
               aria-label="Northstar on Instagram (coming soon)"
               title="Coming soon"
               aria-disabled="true"
             >
-              <img src="/instagram_icon.png" alt="Instagram" />
+              <img src={images.instagram} alt="Instagram" />
             </span>
             <span
               aria-label="Northstar on YouTube (coming soon)"
               title="Coming soon"
               aria-disabled="true"
             >
-              <img src="/yt_icon.png" alt="YouTube  " />
+              <img src={images.youtube} alt="YouTube  " />
             </span>
           </div>
         </div>
@@ -51,14 +52,14 @@ export default function Footer() {
             title="Coming soon"
             aria-disabled="true"
           >
-            Terms of Service · Coming soon
+            Terms of Service
           </span>
           <span
             className="footer-unavailable"
             title="Coming soon"
             aria-disabled="true"
           >
-            Privacy &amp; Security · Coming soon
+            Privacy &amp; Security
           </span>
         </nav>
       </div>

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import mongoose from "mongoose";
-import { checkRecoveryEmail } from "../middlewares/validateRecovery.js";
+import { checkRecoveryEmail } from "../utils/validators/recovery.js";
 import connectDB from "../config/db.js";
 import User from "../models/User.js";
 async function makeAdmin() {

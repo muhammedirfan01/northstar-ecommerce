@@ -1,13 +1,10 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import { Search, ShoppingBag, Heart } from "lucide-react";
-import { AuthContext } from "../../context/AuthContext.js";
-import { ShoppingContext } from "../../context/ShoppingContext.js";
 import API from "../../api/API.js";
 import CategoryDropdown from "./CategoryDropdown.jsx";
 import ProfileMenu from "../../features/profile/ProfileMenu.jsx";
-export default function StoreHeader({ onSignIn }) {
-  const { user, displayUser, status, requestLogout } = useContext(AuthContext);
+export default function StoreHeader({ onSignIn, user, status, logout, cartCount, wishlistIds }) {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   useEffect(() => {
@@ -37,7 +34,6 @@ export default function StoreHeader({ onSignIn }) {
   }
   const laptopLink = categoryLink(/^laptops?$/i);
   const mobileLink = categoryLink(/^(mobiles?|smartphones?|phones?)$/i);
-  const { cartCount, wishlistIds } = useContext(ShoppingContext);
   return (
     <>
       <div className="announcement">
@@ -91,7 +87,6 @@ export default function StoreHeader({ onSignIn }) {
           >
             Mobiles
           </Link>
-          <Link to="/#support">Support</Link>
         </nav>
 
         <form
@@ -155,8 +150,8 @@ export default function StoreHeader({ onSignIn }) {
                 </>
               )}
               <ProfileMenu
-                user={displayUser || user}
-                onSignOut={requestLogout}
+                user={user}
+                onSignOut={logout}
               />
             </div>
           ) : (

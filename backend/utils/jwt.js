@@ -5,6 +5,7 @@ import {
   getJwtSecret,
   authCookieOptions,
 } from "../config/jwt.js";
+
 export function createToken(user) {
   return jwt.sign(
     {

@@ -1,23 +1,24 @@
+import { images } from "../../assets/images.js";
 const benefits = [
   {
     title: "Explore Products",
     description: "Search, sort and filter",
-    icon: "/free_shipping_icon.png",
+    icon: images.shipping,
   },
   {
     title: "1 Year Warranty",
     description: "On all products",
-    icon: "/warranty_icon.png",
+    icon: images.warranty,
   },
   {
     title: "24/7 Support",
     description: "We're here to help",
-    icon: "/24_icon.png",
+    icon: images.support,
   },
   {
     title: "Cart Review",
     description: "Current prices and stock",
-    icon: "/securepayments_icon.png",
+    icon: images.securePayments,
   },
 ];
 export default function StoreBenefits() {

@@ -1,4 +1,5 @@
 import mailer from "../config/mailer.js";
+
 async function sendOtpEmail(email, code, purpose = "registration") {
   const descriptions = {
     registration: "Welcome to Northstar!",
@@ -27,4 +28,5 @@ Do not share this code with anyone.
 If you did not request this, you can ignore this email.`,
   });
 }
+
 export default sendOtpEmail;

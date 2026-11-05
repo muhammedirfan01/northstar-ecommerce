@@ -77,32 +77,30 @@ export default function ProfileSecurityDialog({
           if (user.hasPassword) {
             body.currentPassword = form.get("currentPassword");
           }
-          result = (await API.post("/profile/email", body)).data.data;
+          const response = await API.post("/profile/email", body);
+          result = response.data.data;
         } else {
-          result = (
-            await API.post("/profile/password/code", {
-              newPassword: form.get("newPassword"),
-              confirmPassword: form.get("confirmPassword"),
-            })
-          ).data.data;
+          const response = await API.post("/profile/password/code", {
+            newPassword: form.get("newPassword"),
+            confirmPassword: form.get("confirmPassword"),
+          });
+          result = response.data.data;
         }
         receivedCode(result);
       } else {
         if (emailChange) {
-          result = (
-            await API.post("/profile/email/verify", {
-              challengeId: challenge.challengeId,
-              currentCode: form.get("currentCode"),
-              newCode: form.get("newCode"),
-            })
-          ).data.data;
+          const response = await API.post("/profile/email/verify", {
+            challengeId: challenge.challengeId,
+            currentCode: form.get("currentCode"),
+            newCode: form.get("newCode"),
+          });
+          result = response.data.data;
         } else {
-          result = (
-            await API.patch("/profile/password", {
-              challengeId: challenge.challengeId,
-              code: form.get("code"),
-            })
-          ).data.data;
+          const response = await API.patch("/profile/password", {
+            challengeId: challenge.challengeId,
+            code: form.get("code"),
+          });
+          result = response.data.data;
         }
         onUpdated(
           result.user,
@@ -113,7 +111,7 @@ export default function ProfileSecurityDialog({
         onClose();
       }
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }
@@ -122,21 +120,18 @@ export default function ProfileSecurityDialog({
     setBusy(true);
     setError("");
     try {
-      receivedCode(
-        (
-          await API.post("/profile/security/resend", {
-            challengeId: challenge.challengeId,
-          })
-        ).data.data,
-      );
+      const response = await API.post("/profile/security/resend", {
+        challengeId: challenge.challengeId,
+      });
+      receivedCode(response.data.data);
     } catch (error) {
-      if (error.data?.resendAfter) {
+      if (error.response?.data?.data?.resendAfter) {
         setChallenge({
           ...challenge,
-          resendAt: Date.now() + error.data.resendAfter * 1000,
+          resendAt: Date.now() + error.response?.data?.data.resendAfter * 1000,
         });
       }
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

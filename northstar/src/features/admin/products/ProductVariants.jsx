@@ -42,7 +42,7 @@ export default function ProductVariants() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       }
     }
@@ -117,7 +117,7 @@ export default function ProductVariants() {
       setEditing(null);
       setMessage("Variant saved. Product price and stock have been updated.");
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }
@@ -134,7 +134,7 @@ export default function ProductVariants() {
       setDeleting(null);
       setMessage("Variant deleted. Product stock has been updated.");
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

@@ -18,7 +18,7 @@ export default function ProfileAddress() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       }
     }

@@ -1,14 +1,12 @@
 import { nameError } from "../../utils/nameValidation.js";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { AuthContext } from "../../context/AuthContext.js";
 import API from "../../api/API.js";
 import ProfileSidebar from "./ProfileSidebar.jsx";
 import ProfileAddress from "./ProfileAddress.jsx";
 import ProfileSecurityDialog from "./ProfileSecurityDialog.jsx";
 import "./profile.css";
-export default function ProfileScreen({ editing = false }) {
-  const { user, updateAccount } = useContext(AuthContext);
+export default function ProfileScreen({ editing = false, user, updateAccount }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [name, setName] = useState(user.name);
@@ -70,7 +68,7 @@ export default function ProfileScreen({ editing = false }) {
         },
       });
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setSaving(false);
     }

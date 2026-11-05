@@ -27,7 +27,7 @@ export default function CustomerDetails({ customer, onClose }) {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       } finally {
         if (!controller.signal.aborted) {

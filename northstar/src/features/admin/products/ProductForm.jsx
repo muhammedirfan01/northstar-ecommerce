@@ -82,7 +82,7 @@ export default function ProductForm() {
         setLoadError("");
       } catch (error) {
         if (!controller.signal.aborted) {
-          setLoadError(error.message);
+          setLoadError(error.response?.data?.message || error.message);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -163,7 +163,7 @@ export default function ProductForm() {
         setNotice("Product saved.");
       }
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }
@@ -297,13 +297,6 @@ export default function ProductForm() {
                 </Link>
               )}
             </div>
-            {id && (
-              <p className="catalog-help">
-                <Link to={`/admin/products/${id}/reviews`}>
-                  Manage customer reviews
-                </Link>
-              </p>
-            )}
             {hasVariants ? (
               <p>
                 Prices and stock are managed separately for each variant. Total

@@ -1,20 +1,8 @@
+export { publicUser } from "../utils/user.js";
 import User from "../models/User.js";
 import { readToken, clearAuthCookie } from "../utils/jwt.js";
 
 // Return user details without sensitive information
-export function publicUser(user) {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    phone: user.phone || "",
-    profileImage: user.profileImage || "",
-    isEmailVerified: user.isEmailVerified,
-    isGoogleAccount: Boolean(user.googleId),
-    hasPassword: Boolean(user.passwordHash),
-  };
-}
 
 // Check whether the user is logged in
 export async function requireAuth(req, res, next) {
@@ -27,7 +15,7 @@ export async function requireAuth(req, res, next) {
     });
   }
   const user = await User.findById(token.userId).select(
-    "+passwordHash +authVersion +googleId",
+    "+passwordHash +authVersion +googleId +profileImagePublicId",
   );
   if (!user || !user.isEmailVerified) {
     clearAuthCookie(res);
@@ -73,6 +61,27 @@ export function requirePasswordAccount(req, res, next) {
       success: false,
       message: "Manage your email and password in your Google account.",
     });
+  }
+  next();
+}
+
+export function requireCustomer(req, res, next) {
+  if (req.user.role !== "customer") {
+    return res
+      .status(403)
+      .json({ success: false, message: "Use a customer account to shop." });
+  }
+  next();
+}
+
+export function requireAddressCustomer(req, res, next) {
+  if (req.user.role !== "customer") {
+    return res
+      .status(403)
+      .json({
+        success: false,
+        message: "Address management is available for customer accounts.",
+      });
   }
   next();
 }

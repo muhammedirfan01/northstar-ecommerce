@@ -1,150 +1,77 @@
-import validateProduct from "../middlewares/validateProduct.js";
-import validateVariant from "../middlewares/validateVariant.js";
-import validateCategory from "../middlewares/validateCategory.js";
+import noCache from "../middlewares/noCache.js";
+import { catalogWriteLimiter } from "../middlewares/rateLimiters.js";
 import { Router } from "express";
-import { rateLimit } from "express-rate-limit";
-import * as reviews from "../controllers/reviewController.js";
-import {
-  validateReviewId,
-  validateReviewPage,
-} from "../middlewares/validateReview.js";
 import catalogUpload from "../middlewares/catalogUpload.js";
-import {
-  validateCatalogStatus,
-  validateCatalogId,
-  validateCatalogQuery,
-} from "../middlewares/validateCatalog.js";
 import * as category from "../controllers/categoryController.js";
 import * as product from "../controllers/productController.js";
 const router = Router();
-router.use((_req, res, next) => {
-  res.set("Cache-Control", "no-store");
-  next();
-});
+router.use(noCache);
 // adminRoutes mounts this router after its authentication and admin checks.
-const writeLimit = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
-  keyGenerator: (req) => req.user.id,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Too many catalog changes. Please wait and try again.",
-  },
-});
-router.get("/categories", validateCatalogQuery, category.listCategories);
+
+router.get("/categories", category.listCategories);
 router.post(
   "/categories",
-  writeLimit,
+  catalogWriteLimiter,
   catalogUpload,
-  validateCategory,
   category.addCategory,
 );
 router.patch(
   "/categories/:id",
-  writeLimit,
-  validateCatalogId,
+  catalogWriteLimiter,
   catalogUpload,
-  validateCategory,
   category.saveCategory,
 );
 router.patch(
   "/categories/:id/status",
-  writeLimit,
-  validateCatalogId,
-  validateCatalogStatus,
+  catalogWriteLimiter,
   category.setCategoryListed,
 );
-router.delete(
-  "/categories/:id",
-  writeLimit,
-  validateCatalogId,
-  category.deleteCategory,
-);
-router.get(
-  "/products/:id/reviews",
-  validateCatalogId,
-  validateReviewPage,
-  reviews.adminList,
-);
-router.patch(
-  "/products/:id/reviews/:reviewId",
-  writeLimit,
-  validateCatalogId,
-  validateReviewId,
-  validateCatalogStatus,
-  reviews.moderate,
-);
-router.delete(
-  "/products/:id/reviews/:reviewId",
-  writeLimit,
-  validateCatalogId,
-  validateReviewId,
-  reviews.remove,
-);
-router.get("/products", validateCatalogQuery, product.listProducts);
-router.get("/products/:id", validateCatalogId, product.getProduct);
+router.delete("/categories/:id", catalogWriteLimiter, category.deleteCategory);
+router.get("/products", product.listProducts);
+router.get("/products/:id", product.getProduct);
 router.post(
   "/products",
-  writeLimit,
+  catalogWriteLimiter,
   catalogUpload,
-  validateProduct,
   product.saveProduct,
 );
 router.patch(
   "/products/:id",
-  writeLimit,
-  validateCatalogId,
+  catalogWriteLimiter,
   catalogUpload,
-  validateProduct,
   product.saveProduct,
 );
 router.patch(
   "/products/:id/status",
-  writeLimit,
-  validateCatalogId,
-  validateCatalogStatus,
+  catalogWriteLimiter,
   product.setProductListed,
 );
-router.delete(
-  "/products/:id",
-  writeLimit,
-  validateCatalogId,
-  product.deleteProduct,
-);
+router.delete("/products/:id", catalogWriteLimiter, product.deleteProduct);
 router.post(
   "/products/:id/variants",
-  writeLimit,
-  validateCatalogId,
+  catalogWriteLimiter,
   catalogUpload,
-  validateVariant,
   product.saveVariant,
 );
 router.patch(
   "/products/:id/variants/:variantId",
-  writeLimit,
-  validateCatalogId,
+  catalogWriteLimiter,
   catalogUpload,
-  validateVariant,
   product.saveVariant,
 );
 router.delete(
   "/products/:id/variants/:variantId",
-  writeLimit,
-  validateCatalogId,
+  catalogWriteLimiter,
   product.deleteVariant,
 );
-export default router;
 router.post(
   "/categories/:id/restore",
-  writeLimit,
-  validateCatalogId,
+  catalogWriteLimiter,
   category.restoreCategory,
 );
 router.post(
   "/products/:id/restore",
-  writeLimit,
-  validateCatalogId,
+  catalogWriteLimiter,
   product.restoreProduct,
 );
+export default router;

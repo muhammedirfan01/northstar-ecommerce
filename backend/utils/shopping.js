@@ -6,7 +6,8 @@ import {
   productIsAvailable,
   categoryPopulation,
 } from "../utils/productAvailability.js";
-const MAX_CART_QUANTITY = 5;
+
+const MAX_CART_QUANTITY = 9;
 export async function loadShoppingList(userId) {
   let list = await ShoppingList.findOne({
     userId,
@@ -18,6 +19,7 @@ export async function loadShoppingList(userId) {
   }
   return list;
 }
+
 export async function saveShoppingList(list) {
   try {
     await list.save();
@@ -30,6 +32,22 @@ export async function saveShoppingList(list) {
     }
     throw error;
   }
+}
+
+function cartImage(product, variant) {
+  if (variant?.images?.[0]?.url) {
+    return variant.images[0].url;
+  }
+  if (!product) {
+    return "";
+  }
+  const selectedImage = product.images.find(
+    (image) => String(image._id) === String(variant?.imageId),
+  );
+  if (selectedImage?.url) {
+    return selectedImage.url;
+  }
+  return product.images[0]?.url || "";
 }
 
 // Prices and stock always come from Product, not a price supplied by the browser or cart.
@@ -80,13 +98,7 @@ export function describeCartItem(item, product) {
     variantId: item.variantId ? String(item.variantId) : null,
     name: product?.name || "Product unavailable",
     variantName: variant?.name || "",
-    image:
-      variant?.images?.[0]?.url ||
-      product?.images.find(
-        (image) => String(image._id) === String(variant?.imageId),
-      )?.url ||
-      product?.images[0]?.url ||
-      "",
+    image: cartImage(product, variant),
     quantity: item.quantity,
     unitPricePaise: price,
     regularPricePaise: variant
@@ -99,20 +111,21 @@ export function describeCartItem(item, product) {
     error: error || null,
   };
 }
+
 export async function cartData(list) {
   const products = await Product.find({
     _id: {
       $in: list.cart.map((item) => item.productId),
     },
   }).populate(categoryPopulation);
-  const items = list.cart.map((item) =>
-    describeCartItem(
-      item,
-      products.find(
-        (product) => String(product._id) === String(item.productId),
-      ),
-    ),
-  );
+  // Match each saved cart line to its current product before calculating totals.
+  const items = [];
+  for (const item of list.cart) {
+    const product = products.find(
+      (product) => String(product._id) === String(item.productId),
+    );
+    items.push(describeCartItem(item, product));
+  }
   let quantityTotal = 0;
   let totalPaise = 0;
   for (const item of items) {
@@ -121,39 +134,44 @@ export async function cartData(list) {
   }
   return {
     items,
-    quantityTotal: quantityTotal,
-    totalPaise: totalPaise,
+    quantityTotal,
+    totalPaise,
     canCheckout: items.length > 0 && items.every((item) => item.valid),
   };
 }
+
 export async function wishlistData(list) {
   const products = await Product.find({
     _id: {
       $in: list.wishlist,
     },
   }).populate(categoryPopulation);
+  const results = [];
+  for (const id of list.wishlist) {
+    const product = products.find(
+      (product) => String(product._id) === String(id),
+    );
+    if (!product) {
+      // Keep a removable placeholder if the original product no longer exists.
+      results.push({
+        id: String(id),
+        name: "Product unavailable",
+        category: null,
+        images: [],
+        pricePaise: 0,
+        variants: [],
+        available: false,
+      });
+      continue;
+    }
+    const result = publicProduct(product);
+    result.available = productIsAvailable(product);
+    result.variants = result.variants.filter(
+      (variant) => variant.isListed && variant.stock > 0,
+    );
+    results.push(result);
+  }
   return {
-    products: list.wishlist.map((id) => {
-      const product = products.find(
-        (product) => String(product._id) === String(id),
-      );
-      if (!product) {
-        return {
-          id: String(id),
-          name: "Product unavailable",
-          category: null,
-          images: [],
-          pricePaise: 0,
-          variants: [],
-          available: false,
-        };
-      }
-      const result = publicProduct(product);
-      result.available = productIsAvailable(product);
-      result.variants = result.variants.filter(
-        (variant) => variant.isListed && variant.stock > 0,
-      );
-      return result;
-    }),
+    products: results,
   };
 }

@@ -38,7 +38,7 @@ export default function Pagination({
         </button>
         <span>
           Page {page} of {totalPages}
-        </span>
+        </span> 
         <button
           type="button"
           disabled={disabled || page >= totalPages}

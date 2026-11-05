@@ -23,7 +23,7 @@ export default function LoginForm({
       const result = response.data.data;
       onSuccess(result.user);
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

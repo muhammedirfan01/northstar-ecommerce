@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import addressSchema from "./addressSchema.js";
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -53,6 +54,11 @@ const userSchema = new mongoose.Schema(
     profileImage: {
       type: String,
       default: "",
+    },
+    profileImagePublicId: {
+      type: String,
+      default: "",
+      select: false,
     },
     phone: {
       type: String,

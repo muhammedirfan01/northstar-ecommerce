@@ -8,7 +8,7 @@ import {
   checkShoppingQuantity,
   checkShoppingWish,
   checkShoppingCheckout,
-} from "../middlewares/validateShopping.js";
+} from "../utils/validators/shopping.js";
 import { describeCartItem } from "../utils/shopping.js";
 const shoppingSchemas = {
   add: validationCase(checkShoppingAdd),

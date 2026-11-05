@@ -53,7 +53,7 @@ export default function Customers() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -114,7 +114,7 @@ export default function Customers() {
       setDeletedCustomer(null);
       refreshCustomers();
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setSaving(false);
     }
@@ -128,7 +128,7 @@ export default function Customers() {
       setMessage(`${customer.name} removed.`);
       refreshCustomers();
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setSaving(false);
     }
@@ -142,7 +142,7 @@ export default function Customers() {
       setDeletedCustomer(null);
       refreshCustomers();
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setSaving(false);
     }

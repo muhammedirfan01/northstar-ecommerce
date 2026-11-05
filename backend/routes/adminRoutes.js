@@ -1,7 +1,9 @@
+import noCache from "../middlewares/noCache.js";
+import { getCurrentAdmin } from "../controllers/adminController.js";
 import { Router } from "express";
 import { getDashboard } from "../controllers/adminController.js";
 import catalogAdminRoutes from "./catalogAdminRoutes.js";
-import { requireAuth, requireAdmin, publicUser } from "../middlewares/auth.js";
+import { requireAuth, requireAdmin } from "../middlewares/auth.js";
 import {
   getCustomers,
   setCustomerStatus,
@@ -10,41 +12,16 @@ import {
   deleteCustomer,
   restoreCustomer,
 } from "../controllers/adminController.js";
-import {
-  validateCustomerQuery,
-  validateCustomerStatus,
-  validateCustomerId,
-  validateCustomerPhoto,
-} from "../middlewares/validateAdmin.js";
 const router = Router();
-router.use((req, res, next) => {
-  res.set("Cache-Control", "no-store");
-  next();
-});
+router.use(noCache);
 router.use(requireAuth, requireAdmin);
-router.get("/me", (req, res) =>
-  res.json({
-    success: true,
-    data: {
-      user: publicUser(req.user),
-    },
-  }),
-);
+router.get("/me", getCurrentAdmin);
 router.get("/dashboard", getDashboard);
-router.get("/customers", validateCustomerQuery, getCustomers);
-router.get("/customers/:id", validateCustomerId, getCustomer);
-router.get(
-  "/customers/:id/photo",
-  validateCustomerId,
-  validateCustomerPhoto,
-  getCustomerPhoto,
-);
-router.delete("/customers/:id", validateCustomerId, deleteCustomer);
-router.post("/customers/:id/restore", validateCustomerId, restoreCustomer);
-router.patch(
-  "/customers/:id/status",
-  validateCustomerStatus,
-  setCustomerStatus,
-);
+router.get("/customers", getCustomers);
+router.get("/customers/:id", getCustomer);
+router.get("/customers/:id/photo", getCustomerPhoto);
+router.delete("/customers/:id", deleteCustomer);
+router.post("/customers/:id/restore", restoreCustomer);
+router.patch("/customers/:id/status", setCustomerStatus);
 router.use(catalogAdminRoutes);
 export default router;

@@ -1,3 +1,4 @@
+import { images } from "../../assets/images.js";
 import { useRef, useState } from "react";
 import { useGoogleLogin, useGoogleOAuth } from "@react-oauth/google";
 import API from "../../api/API.js";
@@ -27,9 +28,9 @@ export default function GoogleSignInButton({ busy, setBusy, onSuccess }) {
         onSuccess(result.user);
       } catch (error) {
         setError(
-          error.cause?.isAxiosError
+          error.isAxiosError && !error.response
             ? "Our sign-in server could not be reached. Please try again shortly."
-            : error.message,
+            : error.response?.data?.message || error.message,
         );
       } finally {
         setBusy(false);
@@ -78,7 +79,7 @@ export default function GoogleSignInButton({ busy, setBusy, onSuccess }) {
         disabled={busy || !scriptLoadedSuccessfully}
         onClick={signIn}
       >
-        <img src="/google_icon.png" alt="" />
+        <img src={images.google} alt="" />
         Continue with Google
       </button>
       {error && (

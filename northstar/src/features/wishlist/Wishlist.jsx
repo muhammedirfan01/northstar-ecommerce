@@ -1,10 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import API from "../../api/API.js";
-import { ShoppingContext } from "../../context/ShoppingContext.js";
 import ShopProductCard from "../shop/ShopProductCard.jsx";
-export default function Wishlist() {
-  const { wishlistIds } = useContext(ShoppingContext);
+export default function Wishlist({ wishlistIds, addToCart, toggleWishlist }) {
   const ids = wishlistIds.join(",");
   const [products, setProducts] = useState(null);
   const [error, setError] = useState("");
@@ -23,7 +21,7 @@ export default function Wishlist() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       }
     }
@@ -50,7 +48,7 @@ export default function Wishlist() {
       ) : products.length ? (
         <div className="shop-grid">
           {products.map((product) => (
-            <ShopProductCard key={product.id} product={product} />
+            <ShopProductCard key={product.id} product={product} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />
           ))}
         </div>
       ) : (

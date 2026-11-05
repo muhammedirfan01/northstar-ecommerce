@@ -36,7 +36,7 @@ export default function RegisterForm({
       const result = response.data.data;
       onCreated(result);
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

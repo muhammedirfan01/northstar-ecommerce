@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { catalogImageSchema } from "./Category.js";
+
 const price = {
   type: Number,
   required: true,

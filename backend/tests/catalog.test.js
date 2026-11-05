@@ -1,6 +1,6 @@
-import { checkCategoryInput } from "../middlewares/validateCategory.js";
-import { checkProductInput } from "../middlewares/validateProduct.js";
-import { checkVariantInput } from "../middlewares/validateVariant.js";
+import { checkCategoryInput } from "../utils/validators/category.js";
+import { checkProductInput } from "../utils/validators/product.js";
+import { checkVariantInput } from "../utils/validators/variant.js";
 import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";

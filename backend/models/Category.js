@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 export const catalogImageSchema = new mongoose.Schema({
   publicId: {
     type: String,

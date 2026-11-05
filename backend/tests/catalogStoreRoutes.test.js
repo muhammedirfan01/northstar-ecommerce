@@ -1,3 +1,4 @@
+import errorHandler from "../middlewares/errorHandler.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
@@ -43,11 +44,7 @@ function queryResult(value, calls = {}) {
 test("store catalog routes preserve validation, visibility and responses", async (t) => {
   const app = express();
   app.use("/api/products", router);
-  app.use((error, _req, res, _next) =>
-    res.status(500).json({
-      message: error.message,
-    }),
-  );
+  app.use(errorHandler);
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   t.after(

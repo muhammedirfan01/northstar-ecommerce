@@ -1,13 +1,9 @@
+import noCache from "../middlewares/noCache.js";
 import { Router } from "express";
 import * as catalogStore from "../controllers/catalogStoreController.js";
-import { validateCatalogId } from "../middlewares/validateCatalog.js";
-import {
-  disableCatalogCache,
-  validateCatalogStoreQuery,
-} from "../middlewares/validateCatalogStore.js";
 const router = Router();
-router.use(disableCatalogCache);
+router.use(noCache);
 router.get("/categories", catalogStore.listCategories);
-router.get("/", validateCatalogStoreQuery, catalogStore.listProducts);
-router.get("/:id", validateCatalogId, catalogStore.getProduct);
+router.get("/", catalogStore.listProducts);
+router.get("/:id", catalogStore.getProduct);
 export default router;

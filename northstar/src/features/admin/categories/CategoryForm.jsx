@@ -28,7 +28,7 @@ export default function CategoryForm({ category, onClose, onSaved }) {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setOptionsError(error.message);
+          setOptionsError(error.response?.data?.message || error.message);
         }
       }
     }
@@ -64,7 +64,7 @@ export default function CategoryForm({ category, onClose, onSaved }) {
       }
       onSaved();
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

@@ -22,7 +22,7 @@ const questions = [
   {
     question: "Why did my cart total change?",
     answer:
-      "The cart uses current product prices. Checkout review checks prices and stock again so you can review any changes.",
+      "The cart uses current product prices and availability. Product price changes will be reflected when you reload your cart.",
   },
 ];
 export default function FAQ() {

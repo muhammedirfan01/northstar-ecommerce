@@ -1,41 +1,40 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
+
 export default function CategoryDropdown({ categories = [] }) {
   const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef(null);
-  const ordered = categories
-    .filter((category) => !category.parentId)
-    .flatMap((parent) => [
-      parent,
-      ...categories.filter((category) => category.parentId === parent.id),
-    ]);
+
+  // Get main categories
+  const mainCategories = categories.filter(
+    (category) => !category.parentId
+  );
+
+  // Arrange main categories and their subcategories
+  const orderedCategories = [];
+
+  mainCategories.forEach((parent) => {
+    orderedCategories.push(parent);
+
+    const subCategories = categories.filter(
+      (category) => category.parentId === parent.id
+    );
+
+    orderedCategories.push(...subCategories);
+  });
+
   return (
-    <div
-      className="category-dropdown"
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          setIsOpen(false);
-          buttonRef.current?.focus();
-        }
-      }}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
-          setIsOpen(false);
-        }
-      }}
-    >
+    <div className="category-dropdown">
       <button
-        ref={buttonRef}
         className="category-trigger"
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls="header-categories"
         onClick={() => setIsOpen(!isOpen)}
+        type="button"
       >
-        Categories <span aria-hidden="true">▾</span>
+        Categories ▾
       </button>
+
       {isOpen && (
-        <div className="category-dropdown-panel" id="header-categories">
+        <div className="category-dropdown-panel">
+
           <Link
             className="category-option"
             to="/products"
@@ -43,20 +42,23 @@ export default function CategoryDropdown({ categories = [] }) {
           >
             All products
           </Link>
-          {ordered.map((category) => (
+
+          {orderedCategories.map((category) => (
             <Link
+              key={category.id}
+              to={`/products?category=${category.id}`}
               className={
                 category.parentId
                   ? "category-option category-suboption"
                   : "category-option"
               }
-              to={`/products?category=${category.id}`}
-              key={category.id}
               onClick={() => setIsOpen(false)}
             >
-              {category.parentId ? `↳ ${category.name}` : category.name}
+              {category.parentId ? "↳ " : ""}
+              {category.name}
             </Link>
           ))}
+
         </div>
       )}
     </div>

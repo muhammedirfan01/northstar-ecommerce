@@ -1,4 +1,5 @@
-import mongoose from "mongoose"; // This schema does not create a separate collection.Temporary signup details are embedded in the OTP record.
+import mongoose from "mongoose";
+// This schema does not create a separate collection.Temporary signup details are embedded in the OTP record.
 const registrationDetailsSchema = new mongoose.Schema(
   {
     name: {

@@ -93,7 +93,7 @@ export default function Categories() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -146,7 +146,7 @@ export default function Categories() {
       setAction(null);
       refresh();
     } catch (error) {
-      setActionError(error.message);
+      setActionError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

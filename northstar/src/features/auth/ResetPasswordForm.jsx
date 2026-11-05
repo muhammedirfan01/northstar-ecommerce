@@ -36,7 +36,7 @@ export default function ResetPasswordForm({
       });
       onComplete();
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

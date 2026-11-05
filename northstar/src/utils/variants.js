@@ -1,6 +1,4 @@
-
-//5 functions
-   //1,variantConfiguration=
+import { images } from "../assets/images.js";
 export function variantConfiguration(variant) {
   return (
     variantOptions(variant)
@@ -61,6 +59,6 @@ export function variantImage(product, variant) {
     variant?.images?.[0]?.url ||
     product.images.find((image) => image.id === variant?.imageId)?.url ||
     product.images[0]?.url ||
-    "/favicon.png"
+    images.favicon
   );
 }

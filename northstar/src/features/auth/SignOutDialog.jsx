@@ -45,7 +45,11 @@ export default function SignOutDialog({
     try {
       await onConfirm();
     } catch (failure) {
-      setError(failure.message || "Unable to sign out. Please try again.");
+      setError(
+        failure.response?.data?.message ||
+          failure.message ||
+          "Unable to sign out. Please try again.",
+      );
     } finally {
       setBusy(false);
     }

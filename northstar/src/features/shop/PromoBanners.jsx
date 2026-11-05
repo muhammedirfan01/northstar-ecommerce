@@ -1,3 +1,4 @@
+import { images } from "../../assets/images.js";
 import { Link } from "react-router";
 export default function PromoBanners({ mobileLink, audioLink }) {
   return (
@@ -30,7 +31,7 @@ export default function PromoBanners({ mobileLink, audioLink }) {
 
         <img
           className="promo-image"
-          src="/promo_image1.png"
+          src={images.promoPhone}
           alt="Close-up of a smartphone"
           loading="lazy"
         />
@@ -64,7 +65,7 @@ export default function PromoBanners({ mobileLink, audioLink }) {
 
         <img
           className="promo-image"
-          src="/promo_image2.png"
+          src={images.promoAudio}
           alt="Headphones arranged on a desk"
           loading="lazy"
         />

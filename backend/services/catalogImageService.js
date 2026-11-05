@@ -2,8 +2,10 @@ import sharp from "sharp";
 import { randomUUID } from "node:crypto";
 import { getCloudinary } from "../config/cloudinary.js";
 import { httpError } from "../utils/httpError.js";
+
 export async function prepareCatalogImage(file) {
   try {
+    // Check the actual bytes; a file name or browser MIME type can be misleading.
     const image = sharp(file.buffer, {
       limitInputPixels: 25_000_000,
       failOn: "warning",
@@ -15,6 +17,7 @@ export async function prepareCatalogImage(file) {
     ) {
       throw new Error("Invalid image");
     }
+    // Correct phone-camera rotation and fit inside 1200 x 1200 without stretching.
     return await image
       .rotate()
       .resize(1200, 1200, {
@@ -29,6 +32,7 @@ export async function prepareCatalogImage(file) {
     throw httpError("One of the files is not a valid JPG, PNG or WebP image.");
   }
 }
+
 export async function removeCatalogImages(images) {
   if (!images.length) {
     return;
@@ -40,6 +44,7 @@ export async function removeCatalogImages(images) {
     console.error("Catalog image cleanup needs Cloudinary configuration.");
     return;
   }
+  // Attempt every deletion. One failed cleanup must not cancel the others.
   const results = await Promise.allSettled(
     images.map((image) =>
       cloudinary.uploader.destroy(image.publicId, {
@@ -55,6 +60,7 @@ export async function removeCatalogImages(images) {
     }
   });
 }
+
 export async function uploadCatalogImages(files, folder = "northstar/catalog") {
   if (!files.length) {
     return [];
@@ -64,6 +70,11 @@ export async function uploadCatalogImages(files, folder = "northstar/catalog") {
   for (const file of files) {
     buffers.push(await prepareCatalogImage(file));
   }
+  return uploadPreparedImages(buffers, folder);
+}
+
+// Upload already validated image bytes; profile photos have their own sizing.
+export async function uploadPreparedImages(buffers, folder) {
   const cloudinary = getCloudinary();
   const images = [];
   const attempted = [];
@@ -81,7 +92,13 @@ export async function uploadCatalogImages(files, folder = "northstar/catalog") {
             overwrite: false,
             timeout: 20000,
           },
-          (error, result) => (error ? reject(error) : resolve(result)),
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          },
         );
         stream.on("error", reject);
         stream.end(buffer);
@@ -93,6 +110,7 @@ export async function uploadCatalogImages(files, folder = "northstar/catalog") {
     }
     return images;
   } catch {
+    // Include attempted uploads: a timed-out upload may still exist remotely.
     await removeCatalogImages(attempted);
     throw httpError("Could not upload images. Please try again.", 503);
   }

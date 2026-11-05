@@ -1,9 +1,5 @@
-import { useContext } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
-import { AuthContext } from "../../context/AuthContext.js";
-export default function RequireSignedIn() {
-  const { user, status, error, refreshUser, signingOut } =
-    useContext(AuthContext);
+export default function RequireSignedIn({ user, status, error, refreshUser }) {
   const location = useLocation();
   if (status === "loading") {
     return (
@@ -23,9 +19,6 @@ export default function RequireSignedIn() {
     );
   }
   if (!user) {
-    if (signingOut) {
-      return null;
-    }
     return (
       <Navigate
         to={`/?signin=1&next=${encodeURIComponent(location.pathname)}`}

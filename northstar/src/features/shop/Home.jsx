@@ -1,3 +1,4 @@
+import { images } from "../../assets/images.js";
 import { useEffect, useState } from "react";
 import CategoryBar from "../../components/layout/CategoryBar.jsx";
 import ShopProductCard from "./ShopProductCard.jsx";
@@ -7,7 +8,7 @@ import StoreBenefits from "../../components/layout/StoreBenefits.jsx";
 import NewArrivals from "./NewArrivals.jsx";
 import FAQ from "./FAQ.jsx";
 import { Link, useLocation } from "react-router";
-function Home() {
+function Home({ wishlistIds, addToCart, toggleWishlist }) {
   const { hash, key: locationKey } = useLocation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -35,7 +36,7 @@ function Home() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       }
     }
@@ -92,7 +93,7 @@ function Home() {
 
         <img
           className="hero-image"
-          src="/hero.png"
+          src={images.hero}
           alt="Laptops and headphones on a desk"
         />
       </section>
@@ -114,7 +115,7 @@ function Home() {
         )}
         <div className="shop-grid">
           {products.map((product) => (
-            <ShopProductCard key={product.id} product={product} />
+            <ShopProductCard key={product.id} product={product} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />
           ))}
         </div>
         {!error && !products.length && (
@@ -124,7 +125,7 @@ function Home() {
 
       <PromoBanners mobileLink={mobileLink} audioLink={audioLink} />
       <StoreBenefits />
-      <NewArrivals products={products.slice(0, 4)} />
+      <NewArrivals products={products.slice(0, 4)} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />
       <FAQ />
     </main>
   );

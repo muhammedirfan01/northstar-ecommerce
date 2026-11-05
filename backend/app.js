@@ -1,3 +1,4 @@
+import errorHandler from "./middlewares/errorHandler.js";
 import express from "express";
 import cors from "cors";
 import healthRoutes from "./routes/healthRoutes.js";
@@ -6,7 +7,6 @@ import adminRoutes from "./routes/adminRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import addressRoutes from "./routes/addressRoutes.js";
 import catalogStoreRoutes from "./routes/catalogStoreRoutes.js";
-import reviewRoutes from "./routes/reviewRoutes.js";
 import shoppingRoutes from "./routes/shoppingRoutes.js";
 import cookieParser from "cookie-parser";
 import { getJwtSecret } from "./config/jwt.js";
@@ -24,7 +24,6 @@ function createApp() {
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/admin", adminRoutes);
-  app.use("/api/products", reviewRoutes);
   app.use("/api/products", catalogStoreRoutes);
   app.use("/api/profile", profileRoutes);
   app.use("/api/addresses", addressRoutes);
@@ -35,43 +34,8 @@ function createApp() {
       message: "Route not found",
     });
   });
-  app.use((error, req, res, next) => {
-    if (res.headersSent) {
-      return next(error);
-    }
-    console.error(error.message);
-    let status = error.status || 500;
-    let message;
-    if (error.expose) {
-      message = error.message;
-    } else {
-      message = "Something went wrong";
-    }
-    if (error.name === "VersionError") {
-      status = 409;
-      message = "This item was changed. Please reload.";
-    }
-    if (error.code === 11000) {
-      status = 409;
-      message = "Item already exists";
-    }
-    if (error.name === "ValidationError" || error.name === "CastError") {
-      status = 400;
-      message = "Invalid data provided";
-    }
-    if (error.data?.resendAfter) {
-      res.set("Retry-After", String(error.data.resendAfter));
-    }
-    res.status(status).json({
-      success: false,
-      message,
-      ...(error.data
-        ? {
-            data: error.data,
-          }
-        : {}),
-    });
-  });
+  app.use(errorHandler);
   return app;
 }
+
 export default createApp;

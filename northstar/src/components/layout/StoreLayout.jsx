@@ -1,11 +1,8 @@
-import { useContext } from "react";
 import { Outlet, useSearchParams } from "react-router";
-import { AuthContext } from "../../context/AuthContext.js";
 import AuthModal from "../ui/AuthModal.jsx";
 import Footer from "./Footer.jsx";
 import StoreHeader from "./StoreHeader.jsx";
-export default function StoreLayout() {
-  const { completeLogin } = useContext(AuthContext);
+export default function StoreLayout({ completeLogin, user, status, logout, cartCount, wishlistIds }) {
   const [params, setParams] = useSearchParams();
   const showAuth = params.has("signin") || params.has("signup");
   function openAuth() {
@@ -24,7 +21,7 @@ export default function StoreLayout() {
   }
   return (
     <>
-      <StoreHeader onSignIn={openAuth} />
+      <StoreHeader onSignIn={openAuth} user={user} status={status} logout={logout} cartCount={cartCount} wishlistIds={wishlistIds} />
       <Outlet />
       <Footer />
       {showAuth && (

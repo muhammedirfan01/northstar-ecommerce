@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { profileImageUrl } from "../../api/API.js";
 export default function ProfileAvatar({ user }) {
   const [failedSource, setFailedSource] = useState(null);
-  const source = profileImageUrl(user?.profileImage);
+  const source = user?.profileImage || "";
   const name = user?.name || "Northstar member";
   return (
     <span className="user-avatar" aria-hidden="true">

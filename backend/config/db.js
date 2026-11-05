@@ -5,8 +5,8 @@ import ProfileVerification from "../models/ProfileVerification.js";
 import PasswordReset from "../models/PasswordReset.js";
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
-import Review from "../models/Review.js";
 import ShoppingList from "../models/ShoppingList.js";
+
 export default async function connectDB() {
   await mongoose.connect(process.env.MONGODB_URI, {
     dbName: "northstar",
@@ -19,7 +19,6 @@ export default async function connectDB() {
     Category.init(),
     Product.init(),
     ShoppingList.init(),
-    Review.init(),
   ]);
   console.log("MongoDB connected and models ready");
 }

@@ -1,5 +1,7 @@
 import Category from "../models/Category.js";
+
 export function publicCategory(category) {
+  // Send only the fields the frontend needs; keep Cloudinary publicId private.
   let parentId = null;
   let parentName = "";
   let parentListed = true;
@@ -27,6 +29,7 @@ export function publicCategory(category) {
     image,
   };
 }
+
 export async function categoryAndChildren(id) {
   const children = await Category.find({
     parent: id,
@@ -38,7 +41,9 @@ export async function categoryAndChildren(id) {
   }
   return ids;
 }
+
 export async function visibleCategories() {
+  // A listed child is still hidden when its parent is unlisted or deleted.
   const categories = await Category.find({
     isListed: true,
     deletedAt: null,

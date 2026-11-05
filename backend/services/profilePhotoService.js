@@ -1,4 +1,5 @@
 import sharp from "sharp";
+
 export default async function processProfilePhoto(buffer) {
   const image = sharp(buffer, {
     limitInputPixels: 16_000_000,

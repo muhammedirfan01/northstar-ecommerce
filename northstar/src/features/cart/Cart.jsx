@@ -1,16 +1,14 @@
-import { useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { images } from "../../assets/images.js";
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { ShoppingBag, ArrowRight, Trash2, Minus, Plus } from "lucide-react";
 import API from "../../api/API.js";
-import { ShoppingContext } from "../../context/ShoppingContext.js";
 import { money } from "../../utils/money.js";
-export default function Cart() {
+export default function Cart({ updateCart }) {
   const [cart, setCart] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [reload, setReload] = useState(0);
-  const { updateCart } = useContext(ShoppingContext);
-  const navigate = useNavigate();
   useEffect(() => {
     const controller = new AbortController();
     async function loadData() {
@@ -25,7 +23,7 @@ export default function Cart() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       }
     }
@@ -48,7 +46,7 @@ export default function Cart() {
       setCart(result);
       updateCart(result);
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
       setReload((value) => value + 1);
     } finally {
       setBusy(false);
@@ -111,7 +109,7 @@ export default function Cart() {
                   className="cart-item-image"
                   to={`/products/${item.productId}`}
                 >
-                  <img src={item.image || "/favicon.png"} alt={item.name} />
+                  <img src={item.image || images.favicon} alt={item.name} />
                 </Link>
                 <div>
                   <h2>
@@ -171,10 +169,6 @@ export default function Cart() {
                 </strong>
               </article>
             ))}
-            <p className="shop-help cart-stock-note">
-              Quantities are limited to current stock, with a maximum of 5 units
-              per option.
-            </p>
           </section>
           <aside className="shop-cart-summary">
             <p className="pd-eyebrow">Cart summary</p>
@@ -198,28 +192,14 @@ export default function Cart() {
                 You save {money(savings)} on these products.
               </p>
             )}
-            <button
-              className="shop-primary"
-              type="button"
-              disabled={busy || !cart.canCheckout}
-              onClick={() =>
-                navigate("/checkout", {
-                  state: {
-                    expectedTotalPaise: cart.totalPaise,
-                  },
-                })
-              }
-            >
-              Continue to checkout <ArrowRight size={16} />
-            </button>
             {!cart.canCheckout && (
               <p className="shop-error">
                 Remove unavailable items or adjust their quantities before
-                checkout.
+                continuing to shop.
               </p>
             )}
             <p className="shop-help">
-              Current prices and stock are checked again before checkout review.
+              Your cart reflects current product prices and availability.
             </p>
           </aside>
         </div>

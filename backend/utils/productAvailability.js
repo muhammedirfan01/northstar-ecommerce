@@ -1,4 +1,5 @@
 export function productIsAvailable(product) {
+  // Check the product, then its category, then the category's parent.
   if (!product || product.deletedAt) {
     return false;
   }
@@ -20,6 +21,7 @@ export function productIsAvailable(product) {
   }
   return true;
 }
+
 export const categoryPopulation = {
   path: "category",
   populate: {

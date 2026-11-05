@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from "react-router";
 import API from "../../api/API.js";
 import ProductFilters from "./ProductFilters.jsx";
 import ShopProductCard from "./ShopProductCard.jsx";
-export default function ProductListing() {
+export default function ProductListing({ wishlistIds, addToCart, toggleWishlist }) {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const query = params.toString();
@@ -42,7 +42,7 @@ export default function ProductListing() {
         }
       } catch (error) {
         if (!controller.signal.aborted) {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -136,7 +136,7 @@ export default function ProductListing() {
               <>
                 <div className="shop-grid">
                   {data.products.map((product) => (
-                    <ShopProductCard key={product.id} product={product} />
+                    <ShopProductCard key={product.id} product={product} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />
                   ))}
                 </div>
                 {!data.products.length && (

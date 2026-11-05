@@ -1,16 +1,13 @@
-import { checkProductInput } from "../middlewares/validateProduct.js";
-import { checkVariantInput } from "../middlewares/validateVariant.js";
+import { checkProductInput } from "../utils/validators/product.js";
+import { checkVariantInput } from "../utils/validators/variant.js";
 import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import Product from "../models/Product.js";
-import { checkReviewInput } from "../middlewares/validateReview.js";
 import { validateVariantOptions } from "../utils/variantOptions.js";
 import { publicProduct } from "../utils/product.js";
-import { reviewSummary } from "../utils/review.js";
 const productSchema = validationCase(checkProductInput);
 const variantSchema = validationCase(checkVariantInput);
-const reviewSchema = validationCase(checkReviewInput);
 const imageId = "111111111111111111111111";
 const productInput = {
   name: "Laptop",
@@ -236,62 +233,4 @@ test("public product data includes editable presentation and variant option fiel
   assert.equal(output.variants[0].imageId, imageId);
   assert.equal(output.quickSpecs[0].value, "Retina");
   assert.equal(output.images[0].publicId, undefined);
-});
-test("reviews reject client-controlled verification, identity, moderation and invalid ratings", () => {
-  const review = {
-    rating: 5,
-    title: "Great laptop",
-    text: "A bright display and very good battery.",
-    recommends: true,
-  };
-  assert.equal(reviewSchema.safeParse(review).success, true);
-  for (const extra of [
-    {
-      rating: 6,
-    },
-    {
-      rating: 3.5,
-    },
-    {
-      title: " ",
-    },
-    {
-      text: "short",
-    },
-    {
-      isListed: true,
-    },
-    {
-      verified: true,
-    },
-    {
-      userId: imageId,
-    },
-  ])
-    assert.equal(
-      reviewSchema.safeParse({
-        ...review,
-        ...extra,
-      }).success,
-      false,
-    );
-});
-test("review summaries handle empty reviews and calculate recommendation percentages", () => {
-  assert.deepEqual(reviewSummary(), {
-    count: 0,
-    average: 0,
-    recommendPercent: 0,
-  });
-  assert.deepEqual(
-    reviewSummary({
-      count: 3,
-      average: 4,
-      recommended: 2,
-    }),
-    {
-      count: 3,
-      average: 4,
-      recommendPercent: 67,
-    },
-  );
 });

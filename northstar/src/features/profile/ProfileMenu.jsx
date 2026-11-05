@@ -4,7 +4,7 @@ import ProfileAvatar from "./ProfileAvatar.jsx";
 export default function ProfileMenu({ user, onSignOut }) {
   const menuRef = useRef(null);
   function closeMenu() {
-    menuRef.current.open = false;
+    if (menuRef.current) menuRef.current.open = false;
   }
   function signOut() {
     closeMenu();
@@ -29,7 +29,7 @@ export default function ProfileMenu({ user, onSignOut }) {
         <ProfileAvatar user={user} />
       </summary>
       <div className="profile-panel">
-        <div className="profile-panel-header">
+        <Link to="/profile" className="profile-panel-header" onClick={closeMenu}>
           <div className="profile-avatar">
             <ProfileAvatar user={user} />
           </div>
@@ -37,7 +37,7 @@ export default function ProfileMenu({ user, onSignOut }) {
             <h3>{user.name}</h3>
             <p>{user.email}</p>
           </div>
-        </div>
+        </Link>
         <div className="profile-menu-group">
           <Link to="/profile" onClick={closeMenu}>
             My Profile
@@ -49,9 +49,6 @@ export default function ProfileMenu({ user, onSignOut }) {
           )}
           {user.role === "customer" && (
             <>
-              <Link to="/cart" onClick={closeMenu}>
-                My Cart
-              </Link>
               <Link to="/wishlist" onClick={closeMenu}>
                 My Wishlist
               </Link>
@@ -62,7 +59,6 @@ export default function ProfileMenu({ user, onSignOut }) {
           className="profile-signout"
           type="button"
           onClick={signOut}
-          aria-haspopup="dialog"
         >
           Sign Out
         </button>

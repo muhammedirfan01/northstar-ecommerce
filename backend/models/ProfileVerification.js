@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const profileVerificationSchema = new mongoose.Schema(
   {
     userId: {

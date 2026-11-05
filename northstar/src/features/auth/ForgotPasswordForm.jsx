@@ -19,7 +19,7 @@ export default function ForgotPasswordForm({
       const result = response.data.data;
       onRequested(result);
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }

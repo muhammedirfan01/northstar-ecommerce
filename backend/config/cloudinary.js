@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+
 export function getCloudinary() {
   const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } =
     process.env;

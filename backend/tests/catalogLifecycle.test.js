@@ -15,9 +15,8 @@ import { addToCart, checkout } from "../controllers/shoppingController.js";
 import { controllerData } from "./controllerTestHelpers.js";
 import { visibleCategories } from "../utils/category.js";
 import { productIsAvailable } from "../utils/productAvailability.js";
-import { checkProductInput } from "../middlewares/validateProduct.js";
-import { checkReviewInput } from "../middlewares/validateReview.js";
-import { checkAddressDetails } from "../middlewares/validateAddress.js";
+import { checkProductInput } from "../utils/validators/product.js";
+import { checkAddressDetails } from "../utils/validators/address.js";
 const id = "111111111111111111111111";
 const userId = "222222222222222222222222";
 const user = {
@@ -264,7 +263,7 @@ test("checkout recomputes the current backend price and rejects a stale total", 
   await assert.rejects(
     controllerData(checkout, {
       user,
-      shoppingInput: {
+      body: {
         expectedTotalPaise: 9000,
       },
     }),
@@ -272,7 +271,7 @@ test("checkout recomputes the current backend price and rejects a stale total", 
   );
   const cart = await controllerData(checkout, {
     user,
-    shoppingInput: {
+    body: {
       expectedTotalPaise: 10000,
     },
   });
@@ -286,7 +285,7 @@ test("checkout rejects an empty cart", async (t) => {
   await assert.rejects(
     controllerData(checkout, {
       user,
-      shoppingInput: {
+      body: {
         expectedTotalPaise: 0,
       },
     }),
@@ -301,7 +300,7 @@ test("checkout rechecks stock and parent-category deletion", async (t) => {
   await assert.rejects(
     controllerData(checkout, {
       user,
-      shoppingInput: {
+      body: {
         expectedTotalPaise: 20000,
       },
     }),
@@ -317,7 +316,7 @@ test("checkout rechecks stock and parent-category deletion", async (t) => {
   await assert.rejects(
     controllerData(checkout, {
       user,
-      shoppingInput: {
+      body: {
         expectedTotalPaise: 20000,
       },
     }),
@@ -330,7 +329,7 @@ test("adding to cart removes the wishlist item and uses backend prices", async (
   const db = shoppingDatabase(t, 0);
   const cart = await controllerData(addToCart, {
     user,
-    shoppingInput: {
+    body: {
       productId: id,
       variantId: null,
       quantity: 2,
@@ -344,7 +343,7 @@ test("adding to cart rejects quantity above stock and deleted products before sa
   const db = shoppingDatabase(t, 2);
   const req = {
     user,
-    shoppingInput: {
+    body: {
       productId: id,
       variantId: null,
       quantity: 2,
@@ -384,16 +383,6 @@ test("plain validators leave the submitted arrays untouched", () => {
   assert.deepEqual(input, before);
   assert.deepEqual(result.highlights, ["Fast"]);
   assert.equal(result.quickSpecs[0].label, "CPU");
-  const review = {
-    rating: 5,
-    title: " Good ",
-    text: " This is a good product. ",
-    recommends: true,
-    retainedImageIds: [id],
-  };
-  const reviewBefore = structuredClone(review);
-  checkReviewInput(review);
-  assert.deepEqual(review, reviewBefore);
 });
 test("address validation preserves Indian phone normalization and field limits", () => {
   const input = {

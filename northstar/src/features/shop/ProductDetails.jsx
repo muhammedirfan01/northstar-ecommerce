@@ -1,21 +1,17 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Heart, ShoppingBag } from "lucide-react";
 import API from "../../api/API.js";
-import { ShoppingContext } from "../../context/ShoppingContext.js";
 import ShopProductCard from "./ShopProductCard.jsx";
 import ImageZoom from "./ImageZoom.jsx";
 import ProductImageMagnifier from "./ProductImageMagnifier.jsx";
 import ProductVariantOptions from "./ProductVariantOptions.jsx";
-import ProductReviews from "./ProductReviews.jsx";
 import { selectedVariant } from "../../utils/variants.js";
 import { money } from "../../utils/money.js";
 import "./product-details.css";
-export default function ProductDetails() {
+export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart, toggleWishlist, wishlistIds } =
-    useContext(ShoppingContext);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -25,7 +21,6 @@ export default function ProductDetails() {
   const [zoom, setZoom] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reload, setReload] = useState(0);
-  const [reviewSummary, setReviewSummary] = useState(null);
   useEffect(() => {
     const controller = new AbortController();
     async function loadData() {
@@ -51,14 +46,13 @@ export default function ProductDetails() {
                 ),
           );
           setNotice("");
-          setReviewSummary(null);
           setZoom(false);
         }
       } catch (error) {
         if (controller.signal.aborted) {
           return;
         }
-        if (error.status === 404 || error.status === 400) {
+        if (error.response?.status === 404 || error.response?.status === 400) {
           navigate("/products", {
             replace: true,
             state: {
@@ -67,7 +61,7 @@ export default function ProductDetails() {
             },
           });
         } else {
-          setError(error.message);
+          setError(error.response?.data?.message || error.message);
         }
       }
     }
@@ -154,7 +148,7 @@ export default function ProductDetails() {
         }
       }
     } catch (error) {
-      setNotice(error.message);
+      setNotice(error.response?.data?.message || error.message);
     } finally {
       setBusy(false);
     }
@@ -231,23 +225,6 @@ export default function ProductDetails() {
           {product.subtitle && (
             <p className="pd-subtitle">{product.subtitle}</p>
           )}
-          <a className="pd-rating-link" href="#reviews">
-            {reviewSummary?.count > 0 ? (
-              <>
-                <span className="pd-stars" aria-hidden="true">
-                  {"★".repeat(Math.round(reviewSummary.average))}
-                  {"☆".repeat(5 - Math.round(reviewSummary.average))}
-                </span>
-                <strong>{reviewSummary.average.toFixed(2)}</strong>
-                <span>
-                  ({reviewSummary.count}{" "}
-                  {reviewSummary.count === 1 ? "review" : "reviews"})
-                </span>
-              </>
-            ) : (
-              "No reviews yet · Be the first to review"
-            )}
-          </a>
           <div className="pd-pricing">
             <div className="pd-price-row">
               <strong>{money(price)}</strong>
@@ -377,11 +354,6 @@ export default function ProductDetails() {
           </>
         )}
       </section>
-      <ProductReviews
-        key={product.id}
-        productId={product.id}
-        onSummary={setReviewSummary}
-      />
       {related.length > 0 && (
         <section className="pd-related">
           <div className="pd-section-heading">
@@ -395,7 +367,7 @@ export default function ProductDetails() {
           </div>
           <div className="pd-related-grid">
             {related.slice(0, 3).map((item) => (
-              <ShopProductCard key={item.id} product={item} />
+              <ShopProductCard key={item.id} product={item} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />
             ))}
           </div>
         </section>

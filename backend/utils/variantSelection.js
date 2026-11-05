@@ -28,6 +28,7 @@ export function variantOptions(variant) {
   }
   return options;
 }
+
 export function optionName(value) {
   const name = value.trim().toLowerCase();
   if (name === "color" || name === "colour") {
@@ -38,15 +39,20 @@ export function optionName(value) {
   }
   return name;
 }
+
 export function defaultVariant(product) {
   const available = product.variants.filter(
     (variant) => variant.isListed && variant.stock > 0,
   );
-  return (
-    available.find(
-      (variant) => String(variant._id) === String(product.defaultVariantId),
-    ) ||
-    available[0] ||
-    null
+  // Prefer the admin's default only while it is listed and in stock.
+  const selected = available.find(
+    (variant) => String(variant._id) === String(product.defaultVariantId),
   );
+  if (selected) {
+    return selected;
+  }
+  if (available.length > 0) {
+    return available[0];
+  }
+  return null;
 }
