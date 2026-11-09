@@ -107,8 +107,3 @@ export const shoppingLimiter = createLimiter(
   "Too many shopping changes. Please wait and try again.",
   (req) => req.user.id,
 );
-// export const cartLimiter=createLimiter(
-//   9,
-//   "Maximum 9 times only",
-//   (req)=>req.user.id,
-// )

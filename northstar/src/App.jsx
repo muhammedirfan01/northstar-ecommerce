@@ -25,6 +25,7 @@ import ProductDetails from "./features/shop/ProductDetails.jsx";
 import Cart from "./features/cart/Cart.jsx";
 import Wishlist from "./features/wishlist/Wishlist.jsx";
 import NotFound from "./components/ui/NotFound.jsx";
+import Checkout from "./features/shop/checkout.jsx"
 export default function App() {
   return <BrowserRouter><AppContent /></BrowserRouter>;
 }
@@ -260,6 +261,7 @@ function AppContent() {
                 <Route path="/wishlist" element={<Wishlist key={user?.id} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />} />
                 <Route path="/addresses" element={<Addresses key={user?.id} user={user} />} />
                 <Route path="/profile" element={<ProfileScreen user={user} updateAccount={updateAccount} key="view" />} />
+                <Route path="/checkout" element={<Checkout/>}/>
                 <Route
                   path="/profile/edit"
                   element={<ProfileScreen user={user} updateAccount={updateAccount} key="edit" editing />}

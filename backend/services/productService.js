@@ -61,7 +61,7 @@ export async function listProducts(input) {
   const products = query.sort.startsWith("status-")
     ? await Product.populate(await Product.aggregate(statusSortPipeline(filter, query.sort, page, query.limit)), categoryPopulation)
     : await Product.find(filter)
-df    .populate(categoryPopulation)
+    .populate(categoryPopulation)
     .sort({
       createdAt: -1,
       _id: -1,
