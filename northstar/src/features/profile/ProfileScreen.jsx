@@ -1,12 +1,17 @@
+import { validateProfilePhoto } from "../../utils/profilePhoto.js";
 import { nameError } from "../../utils/nameValidation.js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import API from "../../api/API.js";
 import ProfileSidebar from "./ProfileSidebar.jsx";
 import ProfileAddress from "./ProfileAddress.jsx";
 import ProfileSecurityDialog from "./ProfileSecurityDialog.jsx";
 import "./profile.css";
-export default function ProfileScreen({ editing = false, user, updateAccount }) {
+export default function ProfileScreen({
+  editing = false,
+  user,
+  updateAccount,
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const [name, setName] = useState(user.name);
@@ -18,6 +23,8 @@ export default function ProfileScreen({ editing = false, user, updateAccount }) 
   const [message, setMessage] = useState(location.state?.notice || "");
   const [security, setSecurity] = useState("");
 
+  const photoRevision = useRef(0);
+  const [checkingPhoto, setCheckingPhoto] = useState(false);
   // Release the temporary photo preview when it is replaced or the page closes.
   useEffect(() => {
     return () => {
@@ -26,24 +33,29 @@ export default function ProfileScreen({ editing = false, user, updateAccount }) 
       }
     };
   }, [preview]);
-  function choosePhoto(event) {
+  async function choosePhoto(event) {
     const file = event.target.files[0];
-    if (!file) {
-      return;
-    }
-    if (
-      !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-      file.size > 2 * 1024 * 1024
-    ) {
-      setError("Choose a JPG, PNG or WebP photo smaller than 2 MB.");
-      return;
-    }
-    setPhoto(file);
-    setPreview(URL.createObjectURL(file));
+    event.target.value = "";
+    if (!file) return;
+    const revision = ++photoRevision.current;
+    setPhoto(null);
+    setPreview("");
+    setCheckingPhoto(true);
     setError("");
+    try {
+      await validateProfilePhoto(file);
+      if (revision !== photoRevision.current) return;
+      setPhoto(file);
+      setPreview(URL.createObjectURL(file));
+    } catch (failure) {
+      if (revision === photoRevision.current) setError(failure.message);
+    } finally {
+      if (revision === photoRevision.current) setCheckingPhoto(false);
+    }
   }
   async function saveProfile(event) {
     event.preventDefault();
+    if (checkingPhoto) return;
     const invalidName = nameError(name);
     if (invalidName) {
       setError(invalidName);
@@ -94,7 +106,7 @@ export default function ProfileScreen({ editing = false, user, updateAccount }) 
             user={user}
             photo={preview || user.profileImage}
             editing={editing}
-            disabled={saving}
+            disabled={saving || checkingPhoto}
             onPhotoChange={choosePhoto}
           />
           <section
@@ -109,7 +121,10 @@ export default function ProfileScreen({ editing = false, user, updateAccount }) 
               onSubmit={saveProfile}
               aria-busy={saving}
             >
-              <fieldset className="account-form-grid" disabled={saving}>
+              <fieldset
+                className="account-form-grid"
+                disabled={saving || checkingPhoto}
+              >
                 <div className="account-field account-field-wide">
                   <label htmlFor="profile-name">Full name</label>
                   <input
@@ -188,7 +203,7 @@ export default function ProfileScreen({ editing = false, user, updateAccount }) 
                   <button
                     className="account-primary"
                     type="submit"
-                    disabled={saving}
+                    disabled={saving || checkingPhoto}
                   >
                     {saving ? "Saving…" : "Save changes"}
                   </button>

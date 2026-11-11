@@ -1,3 +1,7 @@
+import { cityMatches } from "@shared/postalLocations.mjs";
+import { useEffect, useId, useState } from "react";
+import API from "../../api/API.js";
+import "../customer/customer.css";
 export default function AddressForm({
   user,
   address,
@@ -6,9 +10,44 @@ export default function AddressForm({
   onSave,
   onCancel,
 }) {
+  const [pin, setPin] = useState(address?.postalCode || "");
+  const cityOptions = useId();
+  const [city, setCity] = useState(address?.city || "");
+  const [state, setState] = useState(address?.state || "");
+  const [postal, setPostal] = useState(null),
+    [postalError, setPostalError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const validPin = /^[1-9][0-9]{5}$/.test(pin);
+  useEffect(() => {
+    if (!validPin) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      API.get(`/addresses/postal/${pin}`, { signal: controller.signal })
+        .then(({ data }) => {
+          if (controller.signal.aborted) return;
+          setPostal({ ...data.data, pin });
+          setState(data.data.state);
+          setPostalError("");
+        })
+        .catch((failure) => {
+          if (!controller.signal.aborted)
+            setPostalError(
+              failure.response?.data?.message ||
+                "PIN lookup is unavailable. Please try again.",
+            );
+        });
+    }, 350);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [pin, validPin, retry]);
+  const postalReady =
+    postal?.pin === pin && cityMatches(city, postal.cities || postal.districts);
   const mustBeDefault = !hasAddresses || address?.isDefault;
   async function submit(event) {
     event.preventDefault();
+    if (!postalReady) return;
     const element = event.currentTarget;
     const form = new FormData(element);
     const saved = await onSave({
@@ -24,6 +63,10 @@ export default function AddressForm({
     });
     if (saved) {
       element.reset();
+      setCity("");
+      setPin("");
+      setState("");
+      setPostal(null);
     }
   }
   return (
@@ -65,7 +108,12 @@ export default function AddressForm({
           <span>PIN code</span>
           <input
             name="postalCode"
-            defaultValue={address?.postalCode || ""}
+            value={pin}
+            onChange={(event) => {
+              setPin(event.target.value.replace(/\D/g, "").slice(0, 6));
+              setPostal(null);
+              setPostalError("");
+            }}
             autoComplete="shipping postal-code"
             inputMode="numeric"
             pattern="[1-9][0-9]{5}"
@@ -77,24 +125,63 @@ export default function AddressForm({
           <span>City</span>
           <input
             name="city"
-            defaultValue={address?.city || ""}
+            value={city}
+            onChange={(event) => setCity(event.target.value)}
+            list={cityOptions}
             autoComplete="shipping address-level2"
             minLength={2}
             maxLength={80}
             required
           />
         </label>
+        <datalist id={cityOptions}>
+          {(postal?.pin === pin ? postal.cities || postal.districts : []).map(
+            (name) => (
+              <option key={name} value={name} />
+            ),
+          )}
+        </datalist>
         <label className="address-field">
           <span>State / union territory</span>
           <input
             name="state"
-            defaultValue={address?.state || ""}
+            value={state}
+            readOnly
+            title="Filled from your PIN code"
             autoComplete="shipping address-level1"
             minLength={2}
             maxLength={80}
             required
           />
         </label>
+        <div className="postal-notice" role={postalError ? "alert" : "status"}>
+          {postalError ? (
+            <>
+              {postalError}{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setPostalError("");
+                  setRetry((n) => n + 1);
+                }}
+              >
+                Retry lookup
+              </button>
+            </>
+          ) : postal?.pin === pin ? (
+            <>
+              PIN {pin}:{" "}
+              {(postal.cities || postal.districts).slice(0, 4).join(", ")}.
+              {postalReady
+                ? " City matches this PIN code."
+                : " Choose a matching city or locality from the suggestions."}
+            </>
+          ) : validPin ? (
+            "Checking PIN code…"
+          ) : (
+            "Enter a six-digit PIN code to check your city."
+          )}
+        </div>
         <label className="address-field">
           <span>Mobile number</span>
           <input
@@ -125,7 +212,11 @@ export default function AddressForm({
         </label>
       </fieldset>
       <div className="address-form-actions">
-        <button className="address-primary" type="submit" disabled={disabled}>
+        <button
+          className="address-primary"
+          type="submit"
+          disabled={disabled || !postalReady}
+        >
           Save address
         </button>
         <button

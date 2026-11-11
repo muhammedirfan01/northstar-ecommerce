@@ -198,6 +198,11 @@ export default function Cart({ updateCart }) {
                 continuing to shop.
               </p>
             )}
+            {cart.canCheckout && (
+              <Link className="shop-primary" to="/checkout">
+                Proceed to checkout <ArrowRight size={16} />
+              </Link>
+            )}
             <p className="shop-help">
               Your cart reflects current product prices and availability.
             </p>

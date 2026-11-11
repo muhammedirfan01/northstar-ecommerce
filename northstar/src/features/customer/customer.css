@@ -1,0 +1,352 @@
+.customer-page {
+  background: #faf9f6;
+  color: #20221f;
+  padding: 52px max(24px, calc((100% - 1080px) / 2)) 80px;
+  min-height: 65vh;
+  font-size: 14px;
+}
+.customer-page * {
+  box-sizing: border-box;
+}
+.customer-page h1,
+.customer-page h2,
+.customer-page h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+.customer-heading {
+  margin-bottom: 30px;
+}
+.customer-heading h1 {
+  font-size: 42px;
+  line-height: 1.15;
+  margin: 12px 0;
+}
+.customer-heading p {
+  max-width: 650px;
+  line-height: 1.7;
+  color: #686b65;
+  margin: 0;
+}
+.customer-eyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: #807454;
+}
+.customer-card {
+  background: #f4f2ee;
+  border: 1px solid #e8e4dd;
+  border-radius: 6px;
+  padding: 28px;
+  min-width: 0;
+}
+.customer-card h2 {
+  font-size: 25px;
+  margin: 10px 0 16px;
+}
+.customer-card p {
+  line-height: 1.75;
+  color: #62675e;
+}
+.customer-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #e3dfd7;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+}
+.customer-card-heading h2 {
+  margin: 0;
+  font:
+    500 26px Georgia,
+    serif;
+}
+.support-grid {
+  align-items: start;
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 30px;
+}
+.support-aside {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+.support-aside .customer-eyebrow {
+  display: block;
+  margin: 12px 0 6px;
+}
+.customer-page a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+.customer-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.customer-form-grid {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.customer-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: 600;
+}
+.customer-form-grid input,
+.customer-form-grid textarea {
+  border: 1px solid #d9d4ca;
+  background: white;
+  border-radius: 3px;
+  min-width: 0;
+  width: 100%;
+  padding: 12px;
+  font:
+    400 14px/1.5 Arial,
+    sans-serif;
+  color: #262923;
+}
+.customer-form-grid textarea {
+  resize: vertical;
+}
+.customer-field-wide {
+  grid-column: 1/-1;
+}
+.customer-primary {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  border: 1px solid #111;
+  background: #111;
+  color: white !important;
+  border-radius: 3px;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 12px 24px;
+  cursor: pointer;
+}
+.customer-primary:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.customer-page :focus-visible {
+  outline: 2px solid #897655;
+  outline-offset: 3px;
+}
+.customer-note {
+  font-size: 12px;
+  color: #71776e;
+  line-height: 1.7;
+}
+.customer-error {
+  background: #fff0ed;
+  border: 1px solid #e6c6bf;
+  color: #903626;
+  padding: 14px;
+  margin-bottom: 18px;
+  border-radius: 4px;
+}
+.support-confirmation {
+  padding: 20px 0;
+}
+.support-confirmation > svg {
+  color: #008a45;
+}
+.policy-grid {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.policy-grid article {
+  background: white;
+}
+.policy-grid article section + section {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid #eeeae2;
+}
+.customer-green {
+  color: #008c4a !important;
+}
+.wallet-balance {
+  padding: 38px;
+  background: white;
+}
+.wallet-balance > .customer-eyebrow {
+  display: block;
+  margin: 18px 0 8px;
+}
+.wallet-balance > strong {
+  display: block;
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+.wallet-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: #f4f2ee;
+  padding: 16px;
+  margin-top: 28px;
+}
+.wallet-status span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.wallet-history-heading {
+  margin: 44px 0 20px;
+  border: 0;
+  padding: 0;
+}
+.wallet-ledger {
+  border: 1px solid #e8e4dd;
+  border-radius: 6px;
+  overflow: auto;
+  background: white;
+}
+.wallet-ledger table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+  min-width: 650px;
+}
+.wallet-ledger th {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #646a60;
+  background: #f4f2ee;
+  padding: 18px;
+}
+.wallet-ledger td {
+  padding: 20px 18px;
+  border-bottom: 1px solid #eeeae4;
+  line-height: 1.6;
+}
+.wallet-ledger td:last-child,
+.wallet-ledger th:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+.wallet-type {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #f0eeea;
+  padding: 3px 8px;
+}
+.wallet-order-link {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.wallet-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  color: #6b7167;
+  min-width: 350px;
+  font-size: 12px;
+}
+.wallet-pagination button {
+  padding: 8px 12px;
+  border: 1px solid #dfddd6;
+  background: #faf9f6;
+  margin-left: 6px;
+  cursor: pointer;
+}
+.wallet-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.wallet-empty {
+  text-align: center;
+  padding: 36px;
+}
+.wallet-empty h3 {
+  font-size: 24px;
+  margin: 0;
+}
+.postal-notice {
+  grid-column: 1/-1;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+  color: #68705f;
+}
+.postal-notice[role="alert"] {
+  color: #a23a29;
+}
+@media (max-width: 800px) {
+  .support-grid,
+  .policy-grid {
+    grid-template-columns: 1fr;
+  }
+  .policy-grid nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .customer-page {
+    padding-top: 32px;
+  }
+  .customer-heading h1 {
+    font-size: 34px;
+  }
+  .customer-card {
+    padding: 22px;
+  }
+  .wallet-balance > strong {
+    font-size: 34px;
+  }
+  .wallet-history-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .customer-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .customer-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .wallet-status {
+    padding: 12px;
+  }
+  .wallet-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+.wallet-status span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

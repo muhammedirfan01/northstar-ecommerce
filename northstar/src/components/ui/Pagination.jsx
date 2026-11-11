@@ -4,6 +4,7 @@ export default function Pagination({
   onLimit,
   itemLabel = "results",
   disabled = false,
+  pageSizes = [5, 10, 20],
 }) {
   const page = pagination.page;
   const totalPages = pagination.totalPages;
@@ -38,7 +39,7 @@ export default function Pagination({
         </button>
         <span>
           Page {page} of {totalPages}
-        </span> 
+        </span>
         <button
           type="button"
           disabled={disabled || page >= totalPages}
@@ -49,14 +50,14 @@ export default function Pagination({
       </nav>
       <label>
         Rows per page:
-        <select
-          value={limit}
-          disabled={disabled}
-          onChange={changeLimit}
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
+        <select value={limit} disabled={disabled} onChange={changeLimit}>
+          {[...new Set([...pageSizes, limit])]
+            .sort((a, b) => a - b)
+            .map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
         </select>
       </label>
     </div>

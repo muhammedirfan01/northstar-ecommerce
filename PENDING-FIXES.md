@@ -15,4 +15,4 @@ Browser regressions: install Playwright locally (`npm install --no-save playwrig
 
 Backend: `npm test`. Focused review regressions: `node --test tests/pendingFixes.test.js`.
 
-The original project already has three failing backend tests: the profile photo URL test, cart quantity limit test, and its related service boundary test. These failures were reproduced against the untouched Desktop source. They are outside the review fixes listed above.
+The earlier photo URL and cart quantity failures have been fixed. The checkout, orders, returns, invoices and inventory implementation and its current checks are documented in docs/WEEKLY-CHECKLIST.md.

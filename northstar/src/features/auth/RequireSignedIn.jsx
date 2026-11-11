@@ -22,7 +22,7 @@ export default function RequireSignedIn({ user, status, error, refreshUser }) {
   if (!user) {
     return (
       <Navigate
-        to={`/?signin=1&next=${encodeURIComponent(location.pathname)}`}
+        to={`/?signin=1&next=${encodeURIComponent(location.pathname + location.search)}`}
         replace
       />
     );

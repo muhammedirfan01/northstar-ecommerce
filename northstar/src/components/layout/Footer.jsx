@@ -43,24 +43,15 @@ export default function Footer() {
           <Link to="/addresses">Saved Addresses</Link>
           <Link to="/wishlist">Wishlist</Link>
           <Link to="/cart">Cart</Link>
+          <Link to="/wallet">My Wallet</Link>
+          <Link to="/support">Contact Support</Link>
         </nav>
 
         <nav className="footer-links" aria-label="Legal and policies">
           <h2>Legal &amp; Policies</h2>
-          <span
-            className="footer-unavailable"
-            title="Coming soon"
-            aria-disabled="true"
-          >
-            Terms of Service
-          </span>
-          <span
-            className="footer-unavailable"
-            title="Coming soon"
-            aria-disabled="true"
-          >
-            Privacy &amp; Security
-          </span>
+          <Link to="/terms-and-conditions">Terms &amp; Conditions</Link>
+          <Link to="/privacy-policy">Privacy &amp; Security</Link>
+          <Link to="/shipping-policy">Shipping Policy</Link>
         </nav>
       </div>
 

@@ -1,3 +1,4 @@
+import { postalDirectory } from "../services/postalService.js";
 import test, { afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
 import User from "../models/User.js";
@@ -386,6 +387,7 @@ test("address version conflicts reject without writing to the database", async (
 });
 
 test("first address becomes default and the save atomically checks version zero", async () => {
+  mock.method(postalDirectory, "lookup", async () => ({ state: "Kerala", districts: ["Ernakulam"], cities: ["Kochi", "Ernakulam"] }));
   const user = { ...account, addresses: [], defaultAddressId: null };
   mock.method(User, "findById", () => lean(user));
   let filter;

@@ -247,7 +247,8 @@
   text-decoration: none;
   font-size: 12px;
 }
-.header-shopping-link.cart-button {
+.header-shopping-link.cart-button,
+.header-shopping-link.wishlist-button {
   display: grid;
   place-items: center;
   gap: 0;

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import API from "../../api/API.js";
 import AddressForm from "./AddressForm.jsx";
 import "./addresses.css";
 export default function Addresses({ user }) {
+  const location = useLocation();
   const [data, setData] = useState({
     addresses: [],
     version: 0,
@@ -137,6 +138,11 @@ export default function Addresses({ user }) {
   const disabled = loading || saving || Boolean(deleting);
   return (
     <main className="addresses-page">
+      {location.state?.returnTo === "/checkout" && (
+        <Link className="shop-primary" to="/checkout">
+          Return to checkout
+        </Link>
+      )}
       <div className="addresses-heading">
         <div>
           <h1>Saved Addresses</h1>

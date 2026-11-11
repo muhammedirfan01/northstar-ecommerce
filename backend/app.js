@@ -1,4 +1,6 @@
+import customerCareRoutes from "./routes/customerCareRoutes.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import paymentWebhookRoutes from "./routes/paymentWebhookRoutes.js";
 import express from "express";
 import cors from "cors";
 import healthRoutes from "./routes/healthRoutes.js";
@@ -10,7 +12,7 @@ import catalogStoreRoutes from "./routes/catalogStoreRoutes.js";
 import shoppingRoutes from "./routes/shoppingRoutes.js";
 import cookieParser from "cookie-parser";
 import { getJwtSecret } from "./config/jwt.js";
-import orderRoutes from "./routes/orderRoutes.js"
+import orderRoutes from "./routes/orderRoutes.js";
 function createApp() {
   getJwtSecret();
   const app = express();
@@ -20,6 +22,7 @@ function createApp() {
       credentials: true,
     }),
   );
+  app.use("/api/payments", paymentWebhookRoutes);
   app.use(express.json());
   app.use(cookieParser());
   app.use("/api/health", healthRoutes);
@@ -29,7 +32,8 @@ function createApp() {
   app.use("/api/profile", profileRoutes);
   app.use("/api/addresses", addressRoutes);
   app.use("/api", shoppingRoutes);
-  app.use("/api/orders",orderRoutes)
+  app.use("/api/orders", orderRoutes);
+  app.use("/api", customerCareRoutes);
   app.use((req, res) => {
     res.status(404).json({
       success: false,

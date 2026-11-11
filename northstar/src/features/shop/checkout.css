@@ -3,3 +3,112 @@
   background-color: #faf8f5;
   padding: 40px;
 }
+.commerce-page {
+  max-width: 1240px;
+  margin: auto;
+  padding: 32px 24px 64px;
+}
+.commerce-page h1 {
+  font-size: 32px;
+  margin: 16px 0 28px;
+}
+.commerce-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.commerce-card {
+  background: #fff;
+  padding: 26px;
+  border: 1px solid #e5e2dc;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.commerce-card h2 {
+  margin: 0 0 20px;
+}
+.commerce-card p {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  line-height: 1.7;
+}
+.commerce-page label {
+  display: block;
+  margin: 16px 0;
+}
+.commerce-page input:not([type="radio"]),
+.commerce-page select {
+  display: block;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px 12px;
+  max-width: 100%;
+  margin-top: 6px;
+}
+.commerce-option {
+  display: flex !important;
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e5e2dc;
+  border-radius: 6px;
+}
+.commerce-option input {
+  margin-top: 4px;
+}
+.commerce-total {
+  border-top: 1px solid #ddd;
+  padding-top: 16px;
+  font-size: 20px;
+}
+.commerce-page button {
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.commerce-page button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.commerce-actions,
+.commerce-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin: 20px 0;
+}
+.commerce-order-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+  color: inherit;
+  text-decoration: none;
+}
+.commerce-stock-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+}
+.commerce-stock-row > span {
+  flex: 1;
+  min-width: 200px;
+}
+.commerce-page address {
+  line-height: 1.8;
+  font-style: normal;
+}
+@media (max-width: 760px) {
+  .commerce-grid {
+    grid-template-columns: 1fr;
+  }
+  .commerce-page {
+    padding: 20px 14px;
+  }
+}

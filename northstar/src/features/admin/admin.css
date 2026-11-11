@@ -69,7 +69,8 @@
   flex: 1;
   min-height: 0;
   padding: 16px 14px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Navigation groups */

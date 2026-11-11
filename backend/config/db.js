@@ -1,3 +1,7 @@
+import { backfillOrderNumbers } from "../services/orderNumberService.js";
+import { backfillRequestReferences } from "../services/requestNumberService.js";
+import WalletTransaction from "../models/WalletTransaction.js";
+import SupportRequest from "../models/SupportRequest.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import RegistrationOtp from "../models/RegistrationOtp.js";
@@ -12,6 +16,8 @@ export default async function connectDB() {
     dbName: "northstar",
   });
   await Promise.all([
+    WalletTransaction.init(),
+    SupportRequest.init(),
     User.init(),
     RegistrationOtp.init(),
     ProfileVerification.init(),
@@ -20,5 +26,7 @@ export default async function connectDB() {
     Product.init(),
     ShoppingList.init(),
   ]);
+  await backfillOrderNumbers();
+  await backfillRequestReferences();
   console.log("MongoDB connected and models ready");
 }

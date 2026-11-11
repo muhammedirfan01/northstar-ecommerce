@@ -1,0 +1,8 @@
+simulation: northstar-payments
+routing: path
+mocks:
+  - name: razorpay
+    routeKey: razorpay
+    origin:
+      - api.razorpay.com
+    path: postman/mocks/razorpay/config.yaml

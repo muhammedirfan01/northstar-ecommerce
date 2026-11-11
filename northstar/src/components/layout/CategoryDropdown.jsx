@@ -1,31 +1,41 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 
-export default function CategoryDropdown({ categories = [] }) {
+export default function CategoryDropdown({ categories = [], active = false }) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdown = useRef(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    function outside(event) {
+      if (!dropdown.current?.contains(event.target)) setIsOpen(false);
+    }
+    function escape(event) {
+      if (event.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside, true);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [isOpen]);
 
   // Get main categories
-  const mainCategories = categories.filter(
-    (category) => !category.parentId
-  );
-
-  // Arrange main categories and their subcategories
-  const orderedCategories = [];
-
-  mainCategories.forEach((parent) => {
-    orderedCategories.push(parent);
-
-    const subCategories = categories.filter(
-      (category) => category.parentId === parent.id
-    );
-
-    orderedCategories.push(...subCategories);
-  });
+  const mainCategories = categories.filter((category) => !category.parentId);
 
   return (
-    <div className="category-dropdown">
+    <div
+      className="category-dropdown"
+      ref={dropdown}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setIsOpen(false);
+      }}
+    >
       <button
         className="category-trigger"
+        aria-current={active ? "page" : undefined}
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         type="button"
       >
@@ -34,31 +44,16 @@ export default function CategoryDropdown({ categories = [] }) {
 
       {isOpen && (
         <div className="category-dropdown-panel">
-
-          <Link
-            className="category-option"
-            to="/products"
-            onClick={() => setIsOpen(false)}
-          >
-            All products
-          </Link>
-
-          {orderedCategories.map((category) => (
+          {mainCategories.map((category) => (
             <Link
               key={category.id}
               to={`/products?category=${category.id}`}
-              className={
-                category.parentId
-                  ? "category-option category-suboption"
-                  : "category-option"
-              }
+              className="category-option"
               onClick={() => setIsOpen(false)}
             >
-              {category.parentId ? "↳ " : ""}
               {category.name}
             </Link>
           ))}
-
         </div>
       )}
     </div>

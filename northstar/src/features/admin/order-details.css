@@ -1,0 +1,75 @@
+.admin-order-summary {
+  align-items: center;
+  margin-bottom: 22px;
+  gap: 18px;
+}
+.admin-order-summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.admin-order-summary > strong {
+  margin-left: auto;
+  font-size: 14px;
+}
+.admin-order-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+.admin-order-grid .catalog-card {
+  margin: 0 0 22px;
+}
+.admin-order-details address {
+  font-style: normal;
+  font-size: 12px;
+  color: #777;
+  line-height: 1.9;
+}
+.admin-order-details .catalog-fields {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.admin-order-details .catalog-fields input {
+  margin-top: 0;
+}
+.admin-order-items {
+  margin-bottom: 22px;
+}
+.admin-order-items .dashboard-section-heading {
+  padding: 20px 24px;
+}
+.admin-order-items h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.admin-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.admin-order-history {
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #555;
+}
+.admin-order-history li {
+  padding: 5px 0;
+}
+.admin-order-history small {
+  display: block;
+  color: #999;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .admin-order-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-order-items .cm-table {
+    min-width: 520px;
+  }
+}

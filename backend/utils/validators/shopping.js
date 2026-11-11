@@ -1,3 +1,4 @@
+import { MAX_CART_QUANTITY } from "../../constants/shopping.js";
 import { validationError } from "../validation.js";
 import { checkFields, readId } from "../formValidation.js";
 
@@ -6,9 +7,9 @@ function readQuantity(quantity) {
   if (!Number.isSafeInteger(quantity) || quantity < 1) {
     throw validationError("Invalid quantity.", "quantity");
   }
-  if (quantity > 9) {
+  if (quantity > MAX_CART_QUANTITY) {
     throw validationError(
-      "A product option can have at most 5 units.",
+      `A product option can have at most ${MAX_CART_QUANTITY} units.`,
       "quantity",
     );
   }

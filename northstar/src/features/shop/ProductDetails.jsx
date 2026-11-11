@@ -95,7 +95,7 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
     regularPrice = product.regularPricePaise;
   }
   const stock = variant?.stock ?? product.stock;
-  const maxQuantity = Math.min(stock, 5);
+  const maxQuantity = Math.min(stock, 9);
   let discount;
   if (regularPrice > price) {
     discount = Math.round(((regularPrice - price) / regularPrice) * 100);
@@ -133,6 +133,12 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
         if (product.variants.length && !variant) {
           throw new Error("Choose a variant first.");
         }
+        if (kind === "buy") {
+          const params = new URLSearchParams({ productId: product.id, quantity: String(Math.min(quantity, maxQuantity)) });
+          if (variant) params.set("variantId", variant.id);
+          navigate(`/checkout?${params}`);
+          return;
+        }
         if (
           await addToCart(
             product.id,
@@ -140,11 +146,7 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
             Math.min(quantity, maxQuantity),
           )
         ) {
-          if (kind === "buy") {
-            navigate("/cart");
-          } else {
-            setNotice("Added to cart.");
-          }
+          setNotice("Added to cart.");
         }
       }
     } catch (error) {
@@ -237,7 +239,7 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
                 </>
               )}
             </div>
-            {product.priceNote && <p>{product.priceNote}</p>}
+            {product.priceNote && !/demo[ -]?price/i.test(product.priceNote) && <p>{product.priceNote}</p>}
           </div>
           {product.variants.length > 0 && (
             <ProductVariantOptions
@@ -295,17 +297,14 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
             </button>
           </div>
           <p className="shop-help">
-            Maximum 5 units per option. Buy now adds your selection to the cart
-            for review.
+            Maximum 9 units per option, including units already in your cart. Buy now checks out only your selection.
           </p>
           {notice && (
             <p className="shop-notice" role="status">
               {notice}
             </p>
           )}
-          <Link className="pd-text-button" to="/cart">
-            View cart →
-          </Link>
+
           {product.highlights.length > 0 && (
             <ul className="pd-highlights">
               {product.highlights.map((item, index) => (

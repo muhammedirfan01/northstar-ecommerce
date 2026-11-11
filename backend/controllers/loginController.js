@@ -1,3 +1,4 @@
+import { makePublicServiceInput } from "./makeServiceInput.js";
 import { issueAuthCookie, clearAuthCookie } from "../utils/jwt.js";
 import { publicUser } from "../middlewares/auth.js";
 import * as loginService from "../services/loginService.js";
@@ -22,12 +23,7 @@ export function logout(req, res) {
   });
 }
 export async function startLogin(req, res) {
-  const result = await loginService.startLogin({
-    body: req.body,
-    apiBaseUrl: req.headers?.host
-      ? `${req.protocol || "http"}://${req.headers.host}/api`
-      : "",
-  });
+  const result = await loginService.startLogin(makePublicServiceInput(req));
   if (result.authUser) {
     issueAuthCookie(res, result.authUser);
   }

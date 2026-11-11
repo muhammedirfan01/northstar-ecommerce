@@ -77,3 +77,11 @@ test("admin customer responses provide a complete customer-photo URL", async () 
     `https://api.example.test/api/admin/customers/${id}/photo?version=photo-version`,
   );
 });
+
+test("public user photo URLs support API origins without mutating records", () => {
+  assert.equal(publicUser(user).profileImage, user.profileImage);
+  assert.equal(publicUser(user, "https://api.example.test/api").profileImage,
+    "https://api.example.test/api/profile/photo/photo-version");
+  assert.equal(publicUser({ ...user, profileImage: "" }, "https://api.example.test/api").profileImage, "");
+  assert.equal(user.profileImage, "/profile/photo/photo-version");
+});

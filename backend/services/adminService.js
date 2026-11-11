@@ -1,3 +1,4 @@
+import Order from "../models/order.js";
 import { CustomerStatus } from "../constants/statuses.js";
 import {
   checkCustomerQuery,
@@ -302,6 +303,10 @@ export async function restoreCustomer(input) {
   };
 }
 export async function getDashboard(input) {
+  const orders = await Order.countDocuments({});
+  const returns = await Order.countDocuments({
+    "returnRequest.status": { $in: ["requested", "accepted", "rejected", "completed", "cancelled"] },
+  });
   const customers = await User.countDocuments({
     role: "customer",
     deletedAt: null,
@@ -326,6 +331,8 @@ export async function getDashboard(input) {
         products,
         categories,
         publishedProducts,
+        orders,
+        returns,
       },
     },
   };

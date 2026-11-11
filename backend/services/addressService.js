@@ -1,3 +1,4 @@
+import { validatePostalAddress } from "./postalService.js";
 import {
   readAddressForm,
   checkAddressId,
@@ -114,6 +115,7 @@ export async function addAddress(input) {
   if (user.addresses.length >= 10) {
     throw httpError("Maximum 10 addresses allowed.");
   }
+  await validatePostalAddress(input.data);
   const { version, isDefault, ...details } = input.data;
   const address = {
     ...details,
@@ -136,6 +138,7 @@ export async function editAddress(input) {
   if (!address) {
     throw httpError("Address not found.", 404);
   }
+  await validatePostalAddress(input.data);
   const details = input.data;
   address.fullName = details.fullName;
   address.phoneNumber = details.phoneNumber;

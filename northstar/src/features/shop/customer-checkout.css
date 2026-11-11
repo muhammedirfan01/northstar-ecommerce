@@ -1,0 +1,195 @@
+.checkout-page {
+  background: #faf9f6;
+  min-height: 65vh;
+  padding: 36px max(24px, calc((100vw - 1080px) / 2)) 80px;
+  font-size: 14px;
+}
+.checkout-heading {
+  border-bottom: 1px solid #e8e4dd;
+  padding-bottom: 26px;
+  margin-bottom: 30px;
+}
+.checkout-page .checkout-heading h1 {
+  font-size: 38px;
+  margin: 10px 0;
+}
+.checkout-heading p {
+  color: #72766d;
+  margin: 0;
+}
+.checkout-page .purchase-checkout-steps {
+  margin-bottom: 30px;
+  font-size: 10px;
+  justify-content: flex-start;
+  gap: 24px;
+}
+.checkout-page .purchase-columns {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.checkout-page .purchase-stack {
+  gap: 24px;
+}
+.checkout-page .purchase-panel {
+  padding: 26px;
+  border-radius: 6px;
+  border: 1px solid #e8e4dd;
+  background: #f4f2ee;
+}
+.checkout-page .purchase-panel h2 {
+  font-size: 25px;
+  margin: 12px 0 22px;
+}
+.checkout-page .purchase-option {
+  background: #fff;
+  border: 1px solid #e8e4dd;
+  border-radius: 4px;
+  gap: 14px;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.checkout-page .purchase-option.is-selected {
+  border-color: #9a917e;
+  background: #fff;
+}
+.checkout-page .purchase-option p {
+  margin: 7px 0;
+  font-size: 13px;
+  color: #676d62;
+  line-height: 1.6;
+}
+.checkout-page .purchase-option > input {
+  margin-top: 4px;
+}
+.checkout-page .purchase-option > div {
+  min-width: 0;
+  flex: 1;
+}
+.checkout-page .purchase-checkout-summary {
+  background: #fff;
+  position: sticky;
+  top: 24px;
+}
+.checkout-page .purchase-section-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding-bottom: 18px;
+}
+.checkout-page .purchase-field > span {
+  font-size: 10px;
+}
+.checkout-page input:not([type="radio"]):not([type="checkbox"]),
+.checkout-page select {
+  border-radius: 3px;
+  min-height: 42px;
+  font-size: 13px;
+}
+.checkout-page button,
+.checkout-page .purchase-button {
+  border-radius: 3px;
+  font-size: 10px;
+}
+.checkout-page .purchase-primary {
+  min-height: 46px;
+}
+.checkout-page .purchase-coupon {
+  gap: 8px;
+}
+.checkout-page .purchase-coupon input {
+  text-transform: uppercase;
+}
+.checkout-page .address-form {
+  background: white;
+  padding: 20px;
+  border: 1px solid #e4e0d6;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+.checkout-page .address-form h2 {
+  font:
+    600 11px Arial,
+    sans-serif;
+  letter-spacing: 0.06em;
+}
+.checkout-page .purchase-product {
+  padding: 18px 0;
+}
+.checkout-page .purchase-product h3 {
+  font-size: 17px;
+}
+.checkout-page .purchase-product img {
+  border-radius: 4px;
+}
+.checkout-page .purchase-totals {
+  margin-top: 18px;
+}
+.checkout-page .purchase-totals > div {
+  padding: 8px 0;
+}
+.checkout-page .purchase-wide {
+  margin-top: 22px;
+}
+@media (max-width: 900px) {
+  .checkout-page .purchase-columns {
+    grid-template-columns: 1fr;
+  }
+  .checkout-page .purchase-checkout-summary {
+    position: static;
+  }
+  .checkout-page .purchase-panel {
+    padding: 22px;
+  }
+  .checkout-page .purchase-checkout-steps {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 480px) {
+  .checkout-page {
+    padding: 28px 16px 50px;
+  }
+  .checkout-page .purchase-option {
+    padding: 14px;
+  }
+  .checkout-page .purchase-option .purchase-text {
+    font-size: 9px;
+  }
+  .checkout-page .address-form {
+    padding: 14px;
+  }
+  .checkout-page .checkout-heading h1 {
+    font-size: 32px;
+  }
+}
+
+.checkout-page .purchase-product {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 12px;
+}
+.checkout-page .purchase-image {
+  width: 70px;
+  height: 78px;
+  grid-row: 1/3;
+}
+.checkout-page .purchase-product > strong {
+  grid-column: 2;
+  text-align: right;
+  width: auto;
+  margin: 0;
+}
+.checkout-page .purchase-product-copy {
+  width: auto;
+}
+
+.checkout-page label.purchase-option {
+  align-items: flex-start;
+}
+.checkout-page label.purchase-option > input {
+  margin-top: 3px;
+}
+.checkout-page label.purchase-option > span { min-width: 0; }
+.checkout-page label.purchase-option p { margin: 7px 0 0; line-height: 1.6; }
+.checkout-page .checkout-wallet-balance strong { color: #20211f; font-weight: 600; font-variant-numeric: tabular-nums; }
+.checkout-page label.purchase-option small { display: block; margin-top: 5px; line-height: 1.6; font-size: 12px; }

@@ -1,0 +1,9 @@
+# Payment completion contract
+
+Existing routes and response fields stay compatible. This change adds POST `/api/orders/:id/payment/reconcile` (owning customer) and POST `/api/admin/orders/:id/payment/reconcile` (admin). Both accept an empty JSON object and return `{ success: true, data: { order } }`. They recover the existing provider order by receipt and inspect payments, without creating a new payable order. Captured payments confirm the order; authorized payments are captured server-side for the exact order amount unless the order is cancelled. Paid/refunded orders are never reopened. Unknown/ambiguous provider outcomes remain retryable without falsely reporting success.
+
+The existing start-payment route continues returning `data.order` and `data.checkout` (null when settled); checkout additionally includes safe prefill information and the order reference. Client verification submits only Razorpay order ID, payment ID and signature. Success/failure pages can explicitly refresh provider state. Administrators can reconcile pending payments from payment details.
+
+Webhook handling additionally accepts `payment.authorized` and `order.paid`, validates signed payloads, stores deduplication receipts by event ID or payload hash, and retains captured/late-cancelled/refunded state guarantees. Invalid payloads/signatures are rejected; unsupported events are acknowledged without order changes. Provider-backed payment inspection is reused by callbacks, reconciliation and authorization events.
+
+No new credentials are read from files or embedded in code. Configuration stays in backend environment variables: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET. Real merchant callbacks and charges remain external acceptance checks until keys and a public HTTPS webhook are configured.

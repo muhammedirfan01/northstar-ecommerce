@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { nameError } from "../../utils/nameValidation.js";
 import PasswordInput from "../../components/ui/PasswordInput.jsx";
 import { useState } from "react";
@@ -103,7 +104,7 @@ export default function RegisterForm({
             //  required
             disabled={busy}
           />
-          <span>I agree to the Terms of Service &amp; Privacy Policy.</span>
+          <span>I agree to the <Link to="/terms-and-conditions" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</Link> &amp; <Link to="/privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.</span>
         </label>
         {error && (
           <p className="auth-error" role="alert">

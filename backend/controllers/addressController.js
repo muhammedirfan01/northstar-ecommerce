@@ -1,43 +1,27 @@
+import { makeServiceInput } from "./makeServiceInput.js";
 import * as addressService from "../services/addressService.js";
 
 export async function getAddresses(req, res) {
-  const result = await addressService.getAddresses({
-    user: req.user,
-  });
+  const result = await addressService.getAddresses(makeServiceInput(req));
   return res.status(result.status).json(result.body);
 }
 
 export async function addAddress(req, res) {
-  const result = await addressService.addAddress({
-    user: req.user,
-    body: req.body,
-  });
+  const result = await addressService.addAddress(makeServiceInput(req));
   return res.status(result.status).json(result.body);
 }
 
 export async function editAddress(req, res) {
-  const result = await addressService.editAddress({
-    user: req.user,
-    params: req.params,
-    body: req.body,
-  });
+  const result = await addressService.editAddress(makeServiceInput(req));
   return res.status(result.status).json(result.body);
 }
 
 export async function deleteAddress(req, res) {
-  const result = await addressService.deleteAddress({
-    user: req.user,
-    params: req.params,
-    body: req.body,
-  });
+  const result = await addressService.deleteAddress(makeServiceInput(req));
   return res.status(result.status).json(result.body);
 }
 
 export async function setDefaultAddress(req, res) {
-  const result = await addressService.setDefaultAddress({
-    user: req.user,
-    params: req.params,
-    body: req.body,
-  });
+  const result = await addressService.setDefaultAddress(makeServiceInput(req));
   return res.status(result.status).json(result.body);
 }

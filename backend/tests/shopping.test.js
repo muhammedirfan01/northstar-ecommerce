@@ -48,7 +48,7 @@ test("cart accepts only whole quantities within the limit and rejects browser pr
     }).variantId,
     null,
   );
-  for (const quantity of [-1, 0, 1.5, 6, "2"])
+  for (const quantity of [-1, 0, 1.5, 10, "2"])
     assert.equal(
       shoppingSchemas.add.safeParse({
         productId,
@@ -171,4 +171,24 @@ test("deleted products and removed variants remain removable invalid cart lines"
   };
   assert.equal(describeCartItem(item, null).available, false);
   assert.equal(describeCartItem(item, productFixture()).available, false);
+});
+
+test("cart add/update and displayed stock share the nine-unit limit", () => {
+  assert.equal(checkShoppingAdd({ productId, quantity: 9 }).quantity, 9);
+  assert.equal(checkShoppingQuantity({ quantity: 9 }).quantity, 9);
+  assert.throws(() => checkShoppingQuantity({ quantity: 10 }), { status: 400 });
+  const product = productFixture();
+  const item = { productId, quantity: 9 };
+  assert.equal(describeCartItem(item, product).maxQuantity, 9);
+  assert.equal(describeCartItem(item, product).valid, true);
+  const exceeded = describeCartItem({ ...item, quantity: 10 }, product);
+  assert.equal(exceeded.valid, false);
+  assert.equal(exceeded.error, "Maximum 9 units per option, including units already in your cart.");
+});
+
+test("low stock has a separate message from the nine-unit maximum", () => {
+  const product = productFixture(); product.stock = 5;
+  const result = describeCartItem({ productId, quantity: 6 }, product);
+  assert.equal(result.maxQuantity, 5);
+  assert.equal(result.error, "Only 5 units are available for this option.");
 });

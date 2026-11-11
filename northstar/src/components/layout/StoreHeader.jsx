@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { Search, ShoppingBag, Heart } from "lucide-react";
 import API from "../../api/API.js";
 import CategoryDropdown from "./CategoryDropdown.jsx";
 import ProfileMenu from "../../features/profile/ProfileMenu.jsx";
-export default function StoreHeader({ onSignIn, user, status, logout, cartCount, wishlistIds }) {
+export default function StoreHeader({
+  onSignIn,
+  user,
+  status,
+  logout,
+  cartCount,
+  wishlistIds,
+}) {
   const navigate = useNavigate();
+  const { pathname, search } = useLocation();
   const [categories, setCategories] = useState([]);
   useEffect(() => {
     const controller = new AbortController();
@@ -25,15 +33,31 @@ export default function StoreHeader({ onSignIn, user, status, logout, cartCount,
     loadData();
     return () => controller.abort();
   }, []);
-  function categoryLink(pattern) {
+  function findCategory(pattern) {
     const category =
       categories.find(
         (category) => !category.parentId && pattern.test(category.name),
       ) || categories.find((category) => pattern.test(category.name));
-    return category ? `/products?category=${category.id}` : null;
+    return category;
   }
-  const laptopLink = categoryLink(/^laptops?$/i);
-  const mobileLink = categoryLink(/^(mobiles?|smartphones?|phones?)$/i);
+  const laptopCategory = findCategory(/^laptops?$/i);
+  const mobileCategory = findCategory(/^(mobiles?|smartphones?|phones?)$/i);
+  const laptopLink = laptopCategory
+    ? `/products?category=${laptopCategory.id}`
+    : null;
+  const mobileLink = mobileCategory
+    ? `/products?category=${mobileCategory.id}`
+    : null;
+  const selectedCategory = new URLSearchParams(search).get("category");
+  const isListing = pathname === "/products";
+  const laptopActive =
+    isListing && Boolean(laptopCategory) && selectedCategory === laptopCategory.id;
+  const mobileActive =
+    isListing && Boolean(mobileCategory) && selectedCategory === mobileCategory.id;
+  const categoriesActive =
+    isListing && Boolean(selectedCategory) && !laptopActive && !mobileActive;
+  const shopActive =
+    (isListing && !selectedCategory) || pathname.startsWith("/products/");
   return (
     <>
       <div className="announcement">
@@ -57,16 +81,16 @@ export default function StoreHeader({ onSignIn, user, status, logout, cartCount,
         </Link>
 
         <nav aria-label="Main navigation">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) => (isActive ? "nav-home" : "")}
-          >
+          <NavLink to="/" end>
             Home
           </NavLink>
-          <CategoryDropdown categories={categories} />
+          <CategoryDropdown categories={categories} active={categoriesActive} />
+          <Link to="/products" aria-current={shopActive ? "page" : undefined}>
+            Shop Now
+          </Link>
           <Link
             to={laptopLink || "#"}
+            aria-current={laptopActive ? "page" : undefined}
             aria-disabled={!laptopLink}
             onClick={(event) => {
               if (!laptopLink) {
@@ -78,6 +102,7 @@ export default function StoreHeader({ onSignIn, user, status, logout, cartCount,
           </Link>
           <Link
             to={mobileLink || "#"}
+            aria-current={mobileActive ? "page" : undefined}
             aria-disabled={!mobileLink}
             onClick={(event) => {
               if (!mobileLink) {
@@ -87,6 +112,7 @@ export default function StoreHeader({ onSignIn, user, status, logout, cartCount,
           >
             Mobiles
           </Link>
+          <NavLink to="/support">Support</NavLink>
         </nav>
 
         <form
@@ -132,12 +158,12 @@ export default function StoreHeader({ onSignIn, user, status, logout, cartCount,
               {user.role === "customer" && (
                 <>
                   <Link
-                    className="header-shopping-link"
+                    className="wishlist-button header-shopping-link"
                     to="/wishlist"
                     aria-label={`Wishlist, ${wishlistIds.length} products`}
                   >
-                    <Heart size={19} />
-                    <span>{wishlistIds.length}</span>
+                    <Heart size={20} aria-hidden="true" />
+                    <span className="cart-count">{wishlistIds.length}</span>
                   </Link>
                   <Link
                     className="cart-button header-shopping-link"
@@ -149,10 +175,7 @@ export default function StoreHeader({ onSignIn, user, status, logout, cartCount,
                   </Link>
                 </>
               )}
-              <ProfileMenu
-                user={user}
-                onSignOut={logout}
-              />
+              <ProfileMenu user={user} onSignOut={logout} />
             </div>
           ) : (
             <button

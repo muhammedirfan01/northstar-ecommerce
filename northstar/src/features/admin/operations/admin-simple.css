@@ -1,0 +1,116 @@
+.inventory-simple-stock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f6f4f0;
+  padding: 14px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.inventory-simple-stock strong {
+  font-size: 19px;
+  color: #222;
+}
+.inventory-simple-form label {
+  display: grid;
+  gap: 9px;
+}
+.inventory-simple-form .inventory-stock-note {
+  font-size: 11px;
+  color: #888;
+  margin: 0;
+  line-height: 1.6;
+}
+.admin-order-details .admin-order-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 22px;
+  margin: 22px 0;
+}
+.admin-order-details .admin-order-history-toggle {
+  margin-top: 22px;
+}
+.admin-order-details .admin-order-history-toggle > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 0;
+}
+.admin-order-details .admin-order-history-toggle .admin-order-grid {
+  margin: 20px 0 0;
+}
+.admin-order-details .admin-order-main-grid .catalog-card {
+  margin: 0;
+}
+.admin-order-details .admin-order-main-grid h2 {
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.admin-order-details .admin-order-main-grid address {
+  font-size: 12px;
+  line-height: 1.8;
+  font-style: normal;
+  color: #666;
+}
+.admin-order-details .admin-order-main-grid .cm-details {
+  margin: 0;
+}
+.admin-order-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.ops-inventory .cm-heading .cm-summary {
+  margin: 0;
+  justify-content: flex-end;
+}
+.ops-inventory .cm-toolbar {
+  margin-top: 24px;
+}
+@media (max-width: 900px) {
+  .admin-order-details .admin-order-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .ops-inventory .cm-heading .cm-summary {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 600px) {
+  .inventory-simple-stock {
+    gap: 16px;
+  }
+  .customer-admin-tabs {
+    gap: 18px;
+  }
+}
+.ops-modal-body label.business-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.7;
+}
+.ops-modal-body label.business-check input {
+  width: auto;
+  min-height: 0;
+  margin-top: 4px;
+}
+.inventory-simple-form {
+  display: grid;
+  gap: 16px;
+}
+.inventory-simple-form .ops-modal-actions {
+  margin-top: 4px;
+}
+.order-action-options { display: grid; gap: 12px; }
+.order-action-options .cm-button {
+  justify-content: flex-start;
+  min-height: 44px;
+  padding: 12px 14px;
+  text-decoration: none;
+  color: inherit;
+}
+.ops-advanced-panel { background: #faf9f7; }
+@media (max-width: 1000px) {
+  .cm-heading > .ops-summary { max-width: 100%; justify-content: flex-start; }
+}

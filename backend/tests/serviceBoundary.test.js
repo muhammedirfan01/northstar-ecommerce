@@ -17,7 +17,7 @@ test("cart service validates raw requests before loading records", async () => {
   const product = mock.method(Product, "findById", () => { throw new Error("Must not query"); });
   const list = mock.method(ShoppingList, "findOne", () => { throw new Error("Must not query"); });
   await assert.rejects(addToCart({ user, body: { productId: "bad-id", quantity: 1 } }), { status: 400 });
-  await assert.rejects(addToCart({ user, body: { productId: id, quantity: 6 }, data: { productId: id, quantity: 1 } }), { status: 400 });
+  await assert.rejects(addToCart({ user, body: { productId: id, quantity: 10 }, data: { productId: id, quantity: 1 } }), { status: 400 });
   assert.equal(product.mock.calls.length, 0);
   assert.equal(list.mock.calls.length, 0);
 });

@@ -1,0 +1,10 @@
+import { Router } from "express";
+import * as controller from "../controllers/adminCouponController.js";
+const router = Router();
+router.get("/coupons", controller.listCoupons);
+router.post("/coupons", controller.createCoupon);
+router.patch("/coupons/:id", controller.editCoupon);
+router.patch("/coupons/:id/status", controller.setCouponStatus);
+router.delete("/coupons/:id", controller.deleteCoupon);
+router.post("/coupons/:id/restore", controller.restoreCoupon);
+export default router;

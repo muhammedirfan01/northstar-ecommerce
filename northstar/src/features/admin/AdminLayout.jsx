@@ -1,3 +1,5 @@
+import { CreditCard, RotateCcw, MessageSquare } from "lucide-react";
+import "./operations/operations.css";
 import { Link, NavLink, Outlet } from "react-router";
 import {
   Compass,
@@ -9,7 +11,6 @@ import {
   Tag,
   BadgePercent,
   ChartNoAxesColumnIncreasing,
-  Settings2,
   LogOut,
 } from "lucide-react";
 import ProfileAvatar from "../profile/ProfileAvatar.jsx";
@@ -17,52 +18,38 @@ import "./admin.css";
 import "./management.css";
 import "./catalog.css";
 const navigation = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { label: "Products", icon: Archive, path: "/admin/products" },
+  { label: "Categories", icon: Shapes, path: "/admin/categories" },
+  { label: "Orders", icon: Archive, path: "/admin/orders" },
+  { label: "Customers", icon: Users, path: "/admin/customers" },
   {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    path: "/admin",
+    label: "Customer Requests",
+    icon: MessageSquare,
+    path: "/admin/customers/requests",
   },
-  {
-    label: "Products",
-    icon: Archive,
-    path: "/admin/products",
-  },
-  {
-    label: "Categories",
-    icon: Shapes,
-    path: "/admin/categories",
-  },
-  {
-    label: "Customers",
-    icon: Users,
-    path: "/admin/customers",
-  },
-  {
-    label: "Inventory",
-    icon: Warehouse,
-  },
+  { label: "Inventory", icon: Warehouse, path: "/admin/inventory" },
 ];
 const salesNavigation = [
+  { label: "Payments", icon: CreditCard, path: "/admin/payments" },
+  { label: "Returns & Refunds", icon: RotateCcw, path: "/admin/returns" },
   {
     label: "Coupons",
     icon: Tag,
+    path: "/admin/coupons",
   },
   {
     label: "Offers and Campaigns",
     icon: BadgePercent,
+    path: "/admin/offers",
   },
   {
     label: "Sales Report",
     icon: ChartNoAxesColumnIncreasing,
+    path: "/admin/sales-report",
   },
 ];
-const system = [
-  {
-    label: "Settings",
-    icon: Settings2,
-  },
-];
-const navigationSystems = [
+const navigationSections = [
   {
     title: "Main",
     items: navigation,
@@ -70,10 +57,6 @@ const navigationSystems = [
   {
     title: "Sales and Marketing",
     items: salesNavigation,
-  },
-  {
-    title: "System",
-    items: system,
   },
 ];
 export default function AdminLayout({ user, logout }) {
@@ -88,7 +71,7 @@ export default function AdminLayout({ user, logout }) {
           </span>
         </Link>
         <nav className="admin-navigation" aria-label="Admin navigation">
-          {navigationSystems.map((sections) => (
+          {navigationSections.map((sections) => (
             <div className="admin-navigation-section" key={sections.title}>
               <h4 className="admin-navigation-label">{sections.title}</h4>
               <div className="admin-navigation-links">
@@ -110,7 +93,7 @@ export default function AdminLayout({ user, logout }) {
                     <NavLink
                       key={label}
                       to={path}
-                      end={path === "/admin"}
+                      end={path === "/admin" || path === "/admin/customers"}
                       className={({ isActive }) =>
                         isActive ? "admin-nav-item is-active" : "admin-nav-item"
                       }
@@ -141,7 +124,7 @@ export default function AdminLayout({ user, logout }) {
             type="button"
             onClick={logout}
             aria-label="Sign out"
-            >
+          >
             <LogOut size={20} aria-hidden="true" />
           </button>
         </div>

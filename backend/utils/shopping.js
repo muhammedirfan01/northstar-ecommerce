@@ -7,7 +7,7 @@ import {
   categoryPopulation,
 } from "../utils/productAvailability.js";
 
-const MAX_CART_QUANTITY = 9;
+import { MAX_CART_QUANTITY } from "../constants/shopping.js";
 export async function loadShoppingList(userId) {
   let list = await ShoppingList.findOne({
     userId,
@@ -84,7 +84,9 @@ export function describeCartItem(item, product) {
     maxQuantity = 0;
   }
   if (available && item.quantity > maxQuantity) {
-    error = `Only ${maxQuantity} units can be added for this option.`;
+    error = stock < MAX_CART_QUANTITY
+      ? `Only ${stock} units are available for this option.`
+      : `Maximum ${MAX_CART_QUANTITY} units per option, including units already in your cart.`;
   }
   let price;
   if (variant) {

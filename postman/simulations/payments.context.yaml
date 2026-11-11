@@ -1,0 +1,72 @@
+purpose:
+  stands_in_for: Razorpay Orders, Payments, Capture, Refund and signed event contracts
+  unblocks: Credential-free execution of the real NORTHSTAR backend and transaction tests over local HTTP
+assumptions:
+  - id: alternate-method-same-order
+    status: supported
+    claim: Pending online orders can switch to COD or Wallet without another order, wallet debit or stock reservation.
+    reason: Authenticated ownership checks, payment-state verification and a version-guarded database transaction reuse the existing order. Late captures retain the primary payment and create a duplicate-payment refund when needed.
+    verification: Isolated replica-set tests cover replay, concurrent wallet requests, insufficient balance rollback, ownership, disabled COD, provider outage, active online payments, late capture, duplicate refund and cancellation. Browser fixtures verify the visible method chooser and confirmation. No real merchant payment was used.
+    source: backend/tests/orderTransactions.test.js ; northstar/tests/payments.cjs ; https://razorpay.com/docs/api/orders/fetch-payments/
+    updated_at: '2026-11-10'
+  - id: official-order-and-payment-shapes
+    status: supported
+    claim: The tested application uses Razorpay order/payment IDs, integer paise amounts, INR currency and receipt lookup shapes.
+    reason: Official API documentation and Orbit's capture/fetch integration brief agree with the request and response shapes modeled here.
+    verification: The isolated integration tests execute create, receipt lookup, payment fetch, order payments and capture over HTTP. The simulator request log confirms those paths ran. This establishes application behavior against the modeled contract, not real merchant processing.
+    source: https://razorpay.com/docs/api/orders/fetch-all/ ; https://razorpay.com/docs/api/payments/capture/ ; backend/services/paymentService.js
+    updated_at: '2026-11-09'
+  - id: capture-controls-are-fixture-only
+    status: supported
+    claim: The __capture, __control and __state endpoints exist only in this simulator and are not Razorpay API operations.
+    reason: These controls create repeatable test states and failure responses; production code does not call them.
+    verification: Inspected application gateway call sites and exercised controls only from isolated test code.
+    source: postman/mocks/razorpay/default.cjs ; backend/tests/orderTransactions.test.js
+    updated_at: '2026-11-09'
+  - id: same-order-payment-retry
+    status: supported
+    claim: In the scenarios run, retries reuse the saved local/gateway order and verify HMAC, payment identity, order, amount, currency and captured state before fulfillment.
+    reason: Unique order/payment associations, compare-and-set updates and receipt recovery prevent another local order or repeat stock deduction.
+    verification: Tests cover signature tampering, mismatched currency/amount, callback loss, failed/dropped setup responses, capture-response loss, cancelled authorizations, late captures and repeated confirmation. The real backend/database writes and simulator HTTP calls were observed.
+    source: backend/tests/orderTransactions.test.js ; backend/tests/paymentSafety.test.js ; https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/
+    updated_at: '2026-11-09'
+  - id: refund-request-idempotency
+    status: supported
+    claim: Application refund retries send a stable X-Refund-Idempotency value and retain completed refund state when an older failure event arrives.
+    reason: The official refund documentation defines the header; the simulator models it and preserves one refund object per key.
+    verification: A simulated committed refund with a lost HTTP response was retried; one provider refund and one completed application refund remained. A delayed failure webhook could not regress completed state.
+    source: https://github.com/razorpay/markdown-docs/blob/master/api/refunds/normal-refunds-idempotent.md ; backend/services/refundService.js ; backend/tests/orderTransactions.test.js
+    updated_at: '2026-11-09'
+  - id: merchant-credentials-and-account-capture
+    status: unknown
+    claim: The user's actual merchant credentials, payment methods and account capture settings support the intended checkout flow.
+    reason: Real credentials and merchant dashboard activation are intentionally left for the user; none were read or used.
+    verification: The server captures authorized payments according to the documented contract in simulation. No real account Test Mode or live payment was attempted.
+    source: docs/RAZORPAY-SETUP.md ; https://razorpay.com/docs/api/payments/capture/
+    updated_at: '2026-11-09'
+  - id: hosted-ui-and-real-webhook-delivery
+    status: unknown
+    claim: The real Razorpay hosted UI and merchant webhook delivery reach the deployed application successfully.
+    reason: Browser checks use a simulated hosted window and signed local deliveries; a public merchant webhook requires account/deployment configuration.
+    verification: Local tests exercise script-load failure, duplicate starts, popup closure, callback allowlisting, dismissal during verification, lost verification responses, signed-event replay and owner/admin controls. Provider deliveries and actual fund transfers remain unverified.
+    source: northstar/tests/payments.cjs ; backend/tests/orderTransactions.test.js ; docs/RAZORPAY-SETUP.md
+    updated_at: '2026-11-09'
+  - id: historical-owner-discovery-gap
+    status: unknown
+    claim: An owning-team published Razorpay mock is available through this Postman installation.
+    reason: The previous run skipped owner discovery because CLI 1.75.0 does not implement postman status; that limitation remains. The local mock was built from public provider contracts rather than downloaded from an owning workspace.
+    verification: Rechecked CLI version/status. Current public discovery through Orbit successfully found capture and payment-fetch endpoints; official provider documentation supplied the remaining contracts.
+    source: postman/mocks/razorpay/config.yaml ; docs/WEEKLY-CHECKLIST.md
+    updated_at: '2026-11-09'
+  - id: purchasing-checklist-audit-20261110
+    status: supported
+    claim: The current NORTHSTAR caller passes the purchasing checklist regression cases against the modeled local Razorpay contract.
+    reason: The existing simulator and isolated replica-set tests exercised actual backend HTTP and database state rather than replacing the caller.
+    verification: 45 integration tests passed; simulator request events confirmed orders, payments, capture and refund paths. Customer orders, commerce and payment browser suites passed with fixtures. No merchant payment was submitted. Local test-key presence was checked without disclosure; the local webhook secret is absent, so public merchant deliveries remain unverified.
+    source: backend/tests/orderTransactions.test.js; backend/tests/salesReport.test.js; northstar/tests/commerce.cjs; northstar/tests/orders.cjs; northstar/tests/payments.cjs; docs/purchasing-requirements-audit.md
+    updated_at: '2026-11-10'
+fingerprints:
+  - id: razorpay-completion-local
+    date: '2026-11-09'
+    commit: null
+    cli: '1.75.0'

@@ -1,3 +1,17 @@
+import CustomerRequests from "./features/admin/customers/CustomerRequests.jsx";
+import Support from "./features/customer/Support.jsx";
+import Policies from "./features/customer/Policies.jsx";
+import Wallet from "./features/customer/Wallet.jsx";
+import Offers from "./features/admin/business/Offers.jsx";
+import SalesReport from "./features/admin/business/SalesReport.jsx";
+import AdminOrders from "./features/admin/operations/AdminOrders.jsx";
+import AdminInventory from "./features/admin/operations/AdminInventory.jsx";
+import AdminPayments from "./features/admin/operations/AdminPayments.jsx";
+import AdminReturns from "./features/admin/operations/AdminReturns.jsx";
+import CustomerOrders from "./features/orders/CustomerOrders.jsx";
+import ReturnRequest from "./features/orders/ReturnRequest.jsx";
+import Orders from "./features/orders/Orders.jsx";
+import PaymentResult from "./features/orders/PaymentResult.jsx";
 import AccountRestrictionDialog from "./features/auth/AccountRestrictionDialog.jsx";
 import { AccountStatus } from "./constants/statuses.js";
 import { restrictionDetails } from "./api/restriction.js";
@@ -5,11 +19,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import API from "./api/API.js";
 import SignOutDialog from "./features/auth/SignOutDialog.jsx";
 import { getCart, addCartItem } from "./features/cart/cartApi.js";
-import { getWishlist, addWishlistItem, removeWishlistItem } from "./features/wishlist/wishlistApi.js";
-import { BrowserRouter, Navigate, Routes, Route, useLocation, useNavigate } from "react-router";
+import {
+  getWishlist,
+  addWishlistItem,
+  removeWishlistItem,
+} from "./features/wishlist/wishlistApi.js";
+import {
+  BrowserRouter,
+  Navigate,
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import Home from "./features/shop/Home.jsx";
 import AdminLayout from "./features/admin/AdminLayout.jsx";
 import AdminDashboard from "./features/admin/AdminDashboard.jsx";
+import Coupons from "./features/admin/coupons/Coupons.jsx";
 import Categories from "./features/admin/categories/Categories.jsx";
 import Customers from "./features/admin/customers/Customers.jsx";
 import RequireAdmin from "./features/admin/RequireAdmin.jsx";
@@ -25,13 +51,16 @@ import ProductDetails from "./features/shop/ProductDetails.jsx";
 import Cart from "./features/cart/Cart.jsx";
 import Wishlist from "./features/wishlist/Wishlist.jsx";
 import NotFound from "./components/ui/NotFound.jsx";
-import Checkout from "./features/shop/checkout.jsx"
+import Checkout from "./features/shop/checkout.jsx";
 export default function App() {
-  return <BrowserRouter><AppContent /></BrowserRouter>;
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
 }
 
 function AppContent() {
-
   // Shared account state lives here and is passed to screens through props.
   const [user, setUser] = useState(null);
   const [status, setStatus] = useState(AccountStatus.LOADING);
@@ -62,30 +91,33 @@ function AppContent() {
     return true;
   }, []);
 
-  const refreshUser = useCallback(async (signal) => {
-    const revision = accountRevision.current;
-    try {
-      const response = await API.get("/auth/me", { signal });
-      // Ignore replies from requests started before an account change.
-      if (signal?.aborted || revision !== accountRevision.current) return;
-      setUser(response.data.data.user);
-      setError("");
-      setRestriction(null);
-      setStatus(AccountStatus.READY);
-    } catch (failure) {
-      if (signal?.aborted || revision !== accountRevision.current) return;
-      if (showRestriction(failure)) return;
-      if ([401, 403].includes(failure.response?.status)) {
-        accountRevision.current++;
-        setUser(null);
+  const refreshUser = useCallback(
+    async (signal) => {
+      const revision = accountRevision.current;
+      try {
+        const response = await API.get("/auth/me", { signal });
+        // Ignore replies from requests started before an account change.
+        if (signal?.aborted || revision !== accountRevision.current) return;
+        setUser(response.data.data.user);
         setError("");
+        setRestriction(null);
         setStatus(AccountStatus.READY);
-        return;
+      } catch (failure) {
+        if (signal?.aborted || revision !== accountRevision.current) return;
+        if (showRestriction(failure)) return;
+        if ([401, 403].includes(failure.response?.status)) {
+          accountRevision.current++;
+          setUser(null);
+          setError("");
+          setStatus(AccountStatus.READY);
+          return;
+        }
+        setError(failure.response?.data?.message || failure.message);
+        setStatus(AccountStatus.ERROR);
       }
-      setError(failure.response?.data?.message || failure.message);
-      setStatus(AccountStatus.ERROR);
-    }
-  }, [showRestriction]);
+    },
+    [showRestriction],
+  );
 
   // Preserve the page and explain the restriction before ending the local session.
   useEffect(() => {
@@ -93,12 +125,18 @@ function AppContent() {
       config.accountRevision = accountRevision.current;
       return config;
     });
-    const responseInterceptor = API.interceptors.response.use((response) => response, (failure) => {
-      if (!failure.config?.signal?.aborted && failure.config?.accountRevision === accountRevision.current) {
-        showRestriction(failure);
-      }
-      return Promise.reject(failure);
-    });
+    const responseInterceptor = API.interceptors.response.use(
+      (response) => response,
+      (failure) => {
+        if (
+          !failure.config?.signal?.aborted &&
+          failure.config?.accountRevision === accountRevision.current
+        ) {
+          showRestriction(failure);
+        }
+        return Promise.reject(failure);
+      },
+    );
     return () => {
       API.interceptors.request.eject(requestInterceptor);
       API.interceptors.response.eject(responseInterceptor);
@@ -124,9 +162,21 @@ function AppContent() {
   function completeLogin(account) {
     updateAccount(account);
     const next = new URLSearchParams(location.search).get("next");
-    const allowed = ["/profile", "/profile/edit", "/addresses", "/products", "/cart", "/wishlist"].includes(next)
-      || /^\/products\/[a-f0-9]{24}$/i.test(next || "");
-    navigate(account.role === "admin" ? "/admin" : allowed ? next : "/", { replace: true });
+    const allowed =
+      [
+        "/profile",
+        "/profile/edit",
+        "/addresses",
+        "/products",
+        "/cart",
+        "/wishlist",
+        "/wallet",
+        "/checkout",
+        "/orders",
+      ].includes(next) || /^\/checkout\?[^#]*$/.test(next || "") || /^\/products\/[a-f0-9]{24}$/i.test(next || "");
+    navigate(account.role === "admin" ? "/admin" : allowed ? next : "/", {
+      replace: true,
+    });
   }
 
   function requestLogout() {
@@ -235,69 +285,200 @@ function AppContent() {
     setWishlistIds(wishlist.products.map((product) => product.id));
   }
 
-
   if (status === AccountStatus.LOADING) {
-    return <main className="account-loading" role="status">Checking your account…</main>;
+    return (
+      <main className="account-loading" role="status">
+        Checking your account…
+      </main>
+    );
   }
 
   if (restriction) {
     return (
       <>
         <main className="account-loading">Your account is unavailable.</main>
-        <AccountRestrictionDialog restriction={restriction} onContinue={acknowledgeRestriction} />
+        <AccountRestrictionDialog
+          restriction={restriction}
+          onContinue={acknowledgeRestriction}
+        />
       </>
     );
   }
 
   return (
     <>
-          <Routes>
-            <Route element={<StoreLayout completeLogin={completeLogin} user={user} status={status} logout={requestLogout} cartCount={cartCount} wishlistIds={wishlistIds} />}>
-              <Route path="/" element={<Home wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />} />
-              <Route path="/products" element={<ProductListing wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />} />
-              <Route path="/products/:id" element={<ProductDetails wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />} />
-              <Route element={<RequireSignedIn user={user} status={status} error={error} refreshUser={refreshUser} />}>
-                <Route path="/cart" element={<Cart key={user?.id} updateCart={updateCart} />} />
-                <Route path="/wishlist" element={<Wishlist key={user?.id} wishlistIds={wishlistIds} addToCart={addToCart} toggleWishlist={toggleWishlist} />} />
-                <Route path="/addresses" element={<Addresses key={user?.id} user={user} />} />
-                <Route path="/profile" element={<ProfileScreen user={user} updateAccount={updateAccount} key="view" />} />
-                <Route path="/checkout" element={<Checkout/>}/>
-                <Route
-                  path="/profile/edit"
-                  element={<ProfileScreen user={user} updateAccount={updateAccount} key="edit" editing />}
-                />
-              </Route>
-            </Route>
+      <Routes>
+        <Route
+          element={
+            <StoreLayout
+              completeLogin={completeLogin}
+              user={user}
+              status={status}
+              logout={requestLogout}
+              cartCount={cartCount}
+              wishlistIds={wishlistIds}
+            />
+          }
+        >
+          <Route
+            path="/"
+            element={
+              <Home
+                wishlistIds={wishlistIds}
+                addToCart={addToCart}
+                toggleWishlist={toggleWishlist}
+              />
+            }
+          />
+          <Route path="/support" element={<Support user={user} />} />
+          <Route path="/privacy-policy" element={<Policies kind="privacy" />} />
+          <Route
+            path="/terms-and-conditions"
+            element={<Policies kind="terms" />}
+          />
+          <Route
+            path="/shipping-policy"
+            element={<Policies kind="shipping" />}
+          />
+          <Route
+            path="/products"
+            element={
+              <ProductListing
+                wishlistIds={wishlistIds}
+                addToCart={addToCart}
+                toggleWishlist={toggleWishlist}
+              />
+            }
+          />
+          <Route
+            path="/products/:id"
+            element={
+              <ProductDetails
+                wishlistIds={wishlistIds}
+                addToCart={addToCart}
+                toggleWishlist={toggleWishlist}
+              />
+            }
+          />
+          <Route
+            element={
+              <RequireSignedIn
+                user={user}
+                status={status}
+                error={error}
+                refreshUser={refreshUser}
+              />
+            }
+          >
             <Route
-              path="/login"
-              element={<Navigate to="/?signin=1" replace />}
+              path="/cart"
+              element={<Cart key={user?.id} updateCart={updateCart} />}
             />
             <Route
-              path="/register"
-              element={<Navigate to="/?signup=1" replace />}
+              path="/wishlist"
+              element={
+                <Wishlist
+                  key={user?.id}
+                  wishlistIds={wishlistIds}
+                  addToCart={addToCart}
+                  toggleWishlist={toggleWishlist}
+                />
+              }
             />
-            <Route element={<RequireAdmin user={user} status={status} error={error} refreshUser={refreshUser} />}>
-              <Route path="/admin" element={<AdminLayout user={user} logout={requestLogout} />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="customers" element={<Customers />} />
-                <Route path="categories" element={<Categories />} />
-                <Route path="products" element={<Products />} />
-                <Route
-                  path="products/new"
-                  element={<ProductForm key="new-product" />}
+            <Route path="/wallet" element={<Wallet key={user?.id} />} />
+            <Route
+              path="/addresses"
+              element={<Addresses key={user?.id} user={user} />}
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProfileScreen
+                  user={user}
+                  updateAccount={updateAccount}
+                  key="view"
                 />
-                <Route
-                  path="products/:id/edit"
-                  element={<ProductForm key="edit-product" />}
+              }
+            />
+            <Route
+              path="/orders"
+              element={<CustomerOrders key={user?.id} addToCart={addToCart} />}
+            />
+            <Route path="/orders/:id/return" element={<ReturnRequest />} />
+            <Route
+              path="/orders/:id"
+              element={<CustomerOrders key={user?.id} addToCart={addToCart} />}
+            />
+            <Route
+              path="/orders/:id/payment/success"
+              element={<PaymentResult />}
+            />
+            <Route
+              path="/orders/:id/payment/failure"
+              element={<PaymentResult />}
+            />
+            <Route
+              path="/checkout"
+              element={<Checkout updateCart={updateCart} user={user} />}
+            />
+            <Route
+              path="/profile/edit"
+              element={
+                <ProfileScreen
+                  user={user}
+                  updateAccount={updateAccount}
+                  key="edit"
+                  editing
                 />
-                <Route
-                  path="products/:id/variants"
-                  element={<ProductVariants />}
-                />
-              </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              }
+            />
+          </Route>
+        </Route>
+        <Route path="/login" element={<Navigate to="/?signin=1" replace />} />
+        <Route
+          path="/register"
+          element={<Navigate to="/?signup=1" replace />}
+        />
+        <Route
+          element={
+            <RequireAdmin
+              user={user}
+              status={status}
+              error={error}
+              refreshUser={refreshUser}
+            />
+          }
+        >
+          <Route
+            path="/admin"
+            element={<AdminLayout user={user} logout={requestLogout} />}
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:id" element={<Orders />} />
+            <Route path="inventory" element={<AdminInventory />} />
+            <Route path="coupons" element={<Coupons />} />
+            <Route path="offers" element={<Offers />} />
+            <Route path="sales-report" element={<SalesReport />} />
+            <Route path="payments" element={<AdminPayments />} />
+            <Route path="returns" element={<AdminReturns />} />
+            <Route path="customers/requests" element={<CustomerRequests />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="products" element={<Products />} />
+            <Route
+              path="products/new"
+              element={<ProductForm key="new-product" />}
+            />
+            <Route
+              path="products/:id/edit"
+              element={<ProductForm key="edit-product" />}
+            />
+            <Route path="products/:id/variants" element={<ProductVariants />} />
+          </Route>
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
       {signOut && (
         <SignOutDialog
           account={signOut.account}
@@ -307,8 +488,6 @@ function AppContent() {
           onSignIn={() => navigate("/?signin=1", { replace: true })}
         />
       )}
-
     </>
   );
 }
-

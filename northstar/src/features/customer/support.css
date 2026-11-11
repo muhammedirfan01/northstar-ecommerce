@@ -1,0 +1,142 @@
+.customer-page.support-page {
+  padding: 24px max(24px, calc((100% - 1100px) / 2)) 32px;
+  min-height: 0;
+}
+.support-page .customer-heading {
+  margin: 0 0 20px;
+}
+.support-page .customer-heading h1 {
+  margin: 0;
+  font-size: 36px;
+}
+.support-page .support-grid {
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  gap: 24px;
+}
+.support-page .support-form {
+  padding: 22px;
+  background: #fff;
+  border-color: #e5e1d8;
+}
+.support-page .customer-card-heading {
+  margin-bottom: 18px;
+  padding-bottom: 15px;
+}
+.support-page .customer-card-heading h2 {
+  font-size: 23px;
+}
+.support-page .customer-form-grid {
+  gap: 16px;
+}
+.support-page .customer-form-grid label {
+  gap: 7px;
+}
+.support-page .customer-form-grid input,
+.support-page .customer-form-grid textarea {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  background: #faf9f6;
+}
+.support-page .customer-form-grid textarea {
+  min-height: 100px;
+  height: 100px;
+}
+.support-page .customer-note {
+  font-size: 11px;
+  margin: 12px 0;
+}
+.support-page .customer-primary {
+  min-height: 42px;
+  padding: 10px 22px;
+}
+.support-page .support-aside {
+  background: #f3f1ec;
+  border: 1px solid #e5e1d8;
+  border-radius: 6px;
+  padding: 0 22px;
+  gap: 0;
+}
+.support-page .support-aside .customer-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  position: relative;
+  padding: 16px 0 16px 32px;
+}
+.support-page .support-aside .customer-card + .customer-card {
+  border-top: 1px solid #ded9ce;
+}
+.support-page .support-aside .customer-eyebrow {
+  margin: 0 0 5px;
+}
+.support-page .support-aside h2 {
+  font-size: 20px;
+  margin: 5px 0 10px;
+}
+.support-page .support-aside p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0 12px;
+}
+.support-page .support-aside .customer-link-list {
+  gap: 12px;
+  font-size: 13px;
+}
+.support-page .support-aside a {
+  font-size: 13px;
+  text-decoration: none;
+}
+.support-page .support-aside a:hover {
+  text-decoration: underline;
+}
+.support-page .support-confirmation {
+  padding: 12px 0;
+}
+
+@media (max-width: 760px) {
+  .support-page .support-grid {
+    grid-template-columns: 1fr;
+  }
+  .customer-page.support-page {
+    padding: 24px 20px 36px;
+  }
+  .support-page .customer-heading h1 {
+    font-size: 32px;
+  }
+  .support-page .support-form {
+    padding: 20px;
+  }
+  .support-page .support-aside {
+    padding: 0 20px;
+  }
+}
+@media (min-width: 761px) and (max-height: 760px) {
+  .customer-page.support-page {
+    padding-top: 18px;
+    padding-bottom: 16px;
+  }
+  .support-page .customer-heading {
+    margin-bottom: 16px;
+  }
+  .support-page .support-form {
+    padding: 18px;
+  }
+  .support-page .customer-form-grid {
+    gap: 12px;
+  }
+  .support-page .customer-card-heading {
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+  }
+  .support-page .customer-form-grid textarea {
+    height: 88px;
+    min-height: 88px;
+  }
+}
+
+.support-page .support-aside .customer-card > svg {
+  position: absolute;
+  left: 0;
+  top: 17px;
+}
