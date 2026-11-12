@@ -1,22 +1,18 @@
+import Campaign from "../src/models/Campaign.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import Category from "../models/Category.js";
-import Product from "../models/Product.js";
-import ShoppingList from "../models/ShoppingList.js";
-import {
-  deleteCategory,
-  restoreCategory,
-} from "../controllers/categoryController.js";
-import {
-  deleteProduct,
-  restoreProduct,
-} from "../controllers/productController.js";
-import { addToCart, checkout } from "../controllers/shoppingController.js";
+import Category from "../src/models/Category.js";
+import Product from "../src/models/Product.js";
+import ShoppingList from "../src/models/ShoppingList.js";
+import { deleteCategory, restoreCategory } from "../src/controllers/categoryController.js";
+import { deleteProduct, restoreProduct } from "../src/controllers/productController.js";
+import { addToCart } from "../src/controllers/shoppingController.js";
 import { controllerData } from "./controllerTestHelpers.js";
-import { visibleCategories } from "../utils/category.js";
-import { productIsAvailable } from "../utils/productAvailability.js";
-import { checkProductInput } from "../utils/validators/product.js";
-import { checkAddressDetails } from "../utils/validators/address.js";
+import { getVisibleCategories } from "../src/services/categoryService.js";
+import { productIsAvailable } from "../src/services/catalogService.js";
+import { validateProductForm } from "../src/services/productService.js";
+import { validateAddressForm } from "../src/services/addressService.js";
+
 const id = "111111111111111111111111";
 const userId = "222222222222222222222222";
 const user = {
@@ -172,7 +168,7 @@ test("deleted categories and children of deleted parents are hidden from custome
     };
   });
   assert.deepEqual(
-    (await visibleCategories()).map((row) => row._id),
+    (await getVisibleCategories()).map((row) => row._id),
     [id],
   );
   assert.deepEqual(filter, {
@@ -224,6 +220,7 @@ test("availability excludes deleted records at every level and requires real sto
   }
 });
 function shoppingDatabase(t, quantity = 1) {
+  t.mock.method(Campaign, "find", () => ({ sort() { return this; }, session() { return this; }, lean: async () => [] }));
   const product = productFixture();
   const list = new ShoppingList({
     userId,
@@ -258,73 +255,6 @@ function shoppingDatabase(t, quantity = 1) {
     requestedUser: () => requestedUser,
   };
 }
-test("checkout recomputes the current backend price and rejects a stale total", async (t) => {
-  const db = shoppingDatabase(t);
-  await assert.rejects(
-    controllerData(checkout, {
-      user,
-      body: {
-        expectedTotalPaise: 9000,
-      },
-    }),
-    (error) => error.status === 409 && error.data.totalPaise === 10000,
-  );
-  const cart = await controllerData(checkout, {
-    user,
-    body: {
-      expectedTotalPaise: 10000,
-    },
-  });
-  assert.equal(cart.canCheckout, true);
-  assert.equal(cart.totalPaise, 10000);
-  assert.equal(db.requestedUser(), userId);
-  assert.equal(db.save.mock.calls.length, 0);
-});
-test("checkout rejects an empty cart", async (t) => {
-  shoppingDatabase(t, 0);
-  await assert.rejects(
-    controllerData(checkout, {
-      user,
-      body: {
-        expectedTotalPaise: 0,
-      },
-    }),
-    {
-      status: 400,
-    },
-  );
-});
-test("checkout rechecks stock and parent-category deletion", async (t) => {
-  const db = shoppingDatabase(t, 2);
-  db.product.stock = 1;
-  await assert.rejects(
-    controllerData(checkout, {
-      user,
-      body: {
-        expectedTotalPaise: 20000,
-      },
-    }),
-    {
-      status: 409,
-    },
-  );
-  db.product.stock = 3;
-  db.product.category.parent = {
-    isListed: true,
-    deletedAt: new Date(),
-  };
-  await assert.rejects(
-    controllerData(checkout, {
-      user,
-      body: {
-        expectedTotalPaise: 20000,
-      },
-    }),
-    {
-      status: 409,
-    },
-  );
-});
 test("adding to cart removes the wishlist item and uses backend prices", async (t) => {
   const db = shoppingDatabase(t, 0);
   const cart = await controllerData(addToCart, {
@@ -379,7 +309,7 @@ test("plain validators leave the submitted arrays untouched", () => {
     ],
   };
   const before = structuredClone(input);
-  const result = checkProductInput(input);
+  const result = validateProductForm(input);
   assert.deepEqual(input, before);
   assert.deepEqual(result.highlights, ["Fast"]);
   assert.equal(result.quickSpecs[0].label, "CPU");
@@ -394,7 +324,7 @@ test("address validation preserves Indian phone normalization and field limits",
     postalCode: "682001",
     version: 0,
   };
-  const parsed = checkAddressDetails(input);
+  const parsed = validateAddressForm(input);
   assert.equal(parsed.phoneNumber, "+919876543210");
   assert.equal(parsed.fullName, "Asha Devi");
   assert.equal(parsed.label, "Home");
@@ -413,7 +343,7 @@ test("address validation preserves Indian phone normalization and field limits",
     },
   ]) {
     assert.throws(() =>
-      checkAddressDetails({
+      validateAddressForm({
         ...input,
         ...change,
       }),

@@ -1,10 +1,11 @@
-import errorHandler from "../middlewares/errorHandler.js";
+import errorHandler from "../src/middlewares/errorHandler.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
-import Category from "../models/Category.js";
-import Product from "../models/Product.js";
-import router from "../routes/catalogStoreRoutes.js";
+import Campaign from "../src/models/Campaign.js";
+import Category from "../src/models/Category.js";
+import Product from "../src/models/Product.js";
+import router from "../src/routes/storeRoutes.js";
 const categoryId = "111111111111111111111111";
 const productId = "222222222222222222222222";
 const category = {
@@ -42,6 +43,7 @@ function queryResult(value, calls = {}) {
   return query;
 }
 test("store catalog routes preserve validation, visibility and responses", async (t) => {
+  t.mock.method(Campaign, "find", () => ({ sort() { return this; }, session() { return this; }, lean: async () => [] }));
   const app = express();
   app.use("/api/products", router);
   app.use(errorHandler);
@@ -110,7 +112,10 @@ test("store catalog routes preserve validation, visibility and responses", async
         return 1;
       });
       const calls = {};
-      t.mock.method(Product, "find", () => queryResult([product], calls));
+      t.mock.method(Product, "find", (filter) => {
+        captured = filter;
+        return queryResult([product], calls);
+      });
       const result = await get(
         `?search=%5BPro%5D&category=${categoryId}&minPrice=1.25&maxPrice=200&sort=price-asc&page=9&limit=2`,
       );
@@ -130,17 +135,14 @@ test("store catalog routes preserve validation, visibility and responses", async
           },
         },
       ]);
-      assert.deepEqual(captured.pricePaise, {
-        $gte: 125,
-        $lte: 20000,
-      });
+      assert.equal(captured.pricePaise, undefined);
       assert.equal(captured.name.test("Laptop [Pro]"), true);
       assert.equal(captured.name.test("Laptop P"), false);
       assert.deepEqual(calls.sort, {
         pricePaise: 1,
         _id: 1,
       });
-      assert.equal(calls.skip, 0);
+      assert.equal(calls.skip, undefined);
       assert.deepEqual(result.body.data.pagination, {
         page: 1,
         limit: 2,

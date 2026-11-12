@@ -1,4 +1,3 @@
-import { cityMatches } from "@shared/postalLocations.mjs";
 import { useEffect, useId, useState } from "react";
 import API from "../../api/API.js";
 import "../customer/customer.css";
@@ -25,8 +24,12 @@ export default function AddressForm({
       API.get(`/addresses/postal/${pin}`, { signal: controller.signal })
         .then(({ data }) => {
           if (controller.signal.aborted) return;
+          const districts = data.data.districts || [];
+          const nextState = data.data.states?.[0] || data.data.state || "";
+          if (!districts.length || !nextState) throw new Error("PIN lookup did not return city and state details.");
           setPostal({ ...data.data, pin });
-          setState(data.data.state);
+          setState(nextState);
+          setCity((current) => districts.find((district) => district.trim().toLowerCase() === current.trim().toLowerCase()) || districts[0]);
           setPostalError("");
         })
         .catch((failure) => {
@@ -43,7 +46,7 @@ export default function AddressForm({
     };
   }, [pin, validPin, retry]);
   const postalReady =
-    postal?.pin === pin && cityMatches(city, postal.cities || postal.districts);
+    postal?.pin === pin && postal.districts?.some((district) => district.trim().toLowerCase() === city.trim().toLowerCase());
   const mustBeDefault = !hasAddresses || address?.isDefault;
   async function submit(event) {
     event.preventDefault();
@@ -110,7 +113,11 @@ export default function AddressForm({
             name="postalCode"
             value={pin}
             onChange={(event) => {
-              setPin(event.target.value.replace(/\D/g, "").slice(0, 6));
+              const nextPin = event.target.value.replace(/\D/g, "").slice(0, 6);
+              if (nextPin === pin) return;
+              setPin(nextPin);
+              setCity("");
+              setState("");
               setPostal(null);
               setPostalError("");
             }}
@@ -135,7 +142,7 @@ export default function AddressForm({
           />
         </label>
         <datalist id={cityOptions}>
-          {(postal?.pin === pin ? postal.cities || postal.districts : []).map(
+          {(postal?.pin === pin ? postal.districts : []).map(
             (name) => (
               <option key={name} value={name} />
             ),
@@ -171,15 +178,15 @@ export default function AddressForm({
           ) : postal?.pin === pin ? (
             <>
               PIN {pin}:{" "}
-              {(postal.cities || postal.districts).slice(0, 4).join(", ")}.
+              {(postal.districts).slice(0, 4).join(", ")}.
               {postalReady
-                ? " City matches this PIN code."
-                : " Choose a matching city or locality from the suggestions."}
+                ? " City and state filled from your PIN code."
+                : " Choose a district returned for this PIN code from the suggestions."}
             </>
           ) : validPin ? (
             "Checking PIN code…"
           ) : (
-            "Enter a six-digit PIN code to check your city."
+            "Enter a six-digit PIN code to fill your city and state."
           )}
         </div>
         <label className="address-field">

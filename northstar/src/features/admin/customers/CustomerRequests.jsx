@@ -10,8 +10,7 @@ import {
 import "./requests.css";
 
 function RequestDialog({ request, close, saved }) {
-  const [note, setNote] = useState(request.resolutionNote || ""),
-    [busy, setBusy] = useState(false),
+  const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   async function update(status) {
     if (busy) return;
@@ -20,7 +19,6 @@ function RequestDialog({ request, close, saved }) {
     try {
       await API.patch(`/admin/customer-requests/${request.id}`, {
         status,
-        note: note.trim(),
         version: request.version,
       });
       saved();
@@ -62,19 +60,6 @@ function RequestDialog({ request, close, saved }) {
           <h3>Message</h3>
           <p>{request.message}</p>
         </section>
-        <label>
-          Internal note (optional)
-          <textarea
-            value={note}
-            maxLength={1000}
-            rows={3}
-            onChange={(event) => setNote(event.target.value)}
-            disabled={busy}
-          />
-          <small>
-            This note is for your records. It is not emailed to the customer.
-          </small>
-        </label>
         {error && (
           <p role="alert" className="cm-notice cm-error">
             {error}

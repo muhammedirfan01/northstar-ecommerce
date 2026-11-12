@@ -58,6 +58,7 @@ export default function ProductForm() {
             return;
           }
           setForm({
+            version: product.version,
             series: product.series || "",
             subtitle: product.subtitle || "",
             badge: product.badge || "",

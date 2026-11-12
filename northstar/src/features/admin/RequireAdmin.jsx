@@ -1,4 +1,4 @@
-import { AccountStatus } from "../../constants/statuses.js";
+import { AccountStatus } from "../../status/statuses.js";
 import { Navigate, Outlet } from "react-router";
 export default function RequireAdmin({ user, status, error, refreshUser }) {
   if (status === AccountStatus.LOADING) {

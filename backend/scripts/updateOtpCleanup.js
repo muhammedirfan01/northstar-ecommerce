@@ -1,6 +1,6 @@
 import "dotenv/config";
 import mongoose from "mongoose";
-import RegistrationOtp from "../models/RegistrationOtp.js";
+import RegistrationOtp from "../src/models/RegistrationOtp.js";
 async function updateOtpCleanup() {
   try {
     if (!process.env.MONGODB_URI) {

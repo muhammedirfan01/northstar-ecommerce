@@ -1,16 +1,17 @@
-import { checkCategoryInput } from "../utils/validators/category.js";
-import { checkProductInput } from "../utils/validators/product.js";
-import { checkVariantInput } from "../utils/validators/variant.js";
+import { validateCategoryForm } from "../src/services/categoryService.js";
+import { validateProductForm } from "../src/services/productService.js";
+import { validateVariantForm } from "../src/services/variantService.js";
 import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import sharp from "sharp";
-import Product from "../models/Product.js";
-import { prepareCatalogImage } from "../services/catalogImageService.js";
-import { updateVariantTotals } from "../utils/product.js";
-const categorySchema = validationCase(checkCategoryInput);
-const productSchema = validationCase(checkProductInput);
-const variantSchema = validationCase(checkVariantInput);
+import Product from "../src/models/Product.js";
+import { prepareCatalogImage } from "../src/services/catalogImageService.js";
+import { updateVariantTotals } from "../src/services/catalogService.js";
+
+const categorySchema = validationCase(validateCategoryForm);
+const productSchema = validationCase(validateProductForm);
+const variantSchema = validationCase(validateVariantForm);
 const categoryId = "111111111111111111111111";
 const validProduct = {
   name: "Laptop",

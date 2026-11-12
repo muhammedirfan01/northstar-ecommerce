@@ -1,4 +1,4 @@
-import { CustomerStatus } from "../../../constants/statuses.js";
+import { CustomerStatus } from "../../../status/statuses.js";
 import { useEffect, useState } from "react";
 import { Search, X } from "lucide-react";
 import API from "../../../api/API.js";

@@ -1,8 +1,9 @@
 import "dotenv/config";
 import mongoose from "mongoose";
-import { checkRecoveryEmail } from "../utils/validators/recovery.js";
-import connectDB from "../config/db.js";
-import User from "../models/User.js";
+import { validateResetEmail } from "../src/services/passwordResetService.js";
+import connectDB from "../src/config/db.js";
+import User from "../src/models/User.js";
+
 async function makeAdmin() {
   try {
     const email = process.argv[2]?.trim().toLowerCase();
@@ -11,10 +12,10 @@ async function makeAdmin() {
         "Provide your registered email: node scripts/makeAdmin.js your@email.com",
       );
     }
-    checkRecoveryEmail({
+    validateResetEmail({
       email,
     });
-    checkRecoveryEmail({
+    validateResetEmail({
       email,
     });
     await connectDB();

@@ -55,6 +55,7 @@ export default function ProductVariants() {
     setForm(
       variant.id
         ? {
+            version: product.version,
             options: variant.options || [],
             isDefault: product.defaultVariantId === variant.id,
             colorHex: variant.colorHex || "",

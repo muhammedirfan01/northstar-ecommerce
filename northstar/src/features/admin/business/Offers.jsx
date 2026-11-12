@@ -68,7 +68,7 @@ function OfferForm({ offer, close, saved }) {
   return (
     <Modal
       title={offer ? "Edit campaign" : "Add campaign"}
-      subtitle="Automatic discounts at checkout, using your existing products and categories."
+      subtitle="Automatic discounts on product pages, in the cart and at checkout."
       close={() => !busy && close()}
       wide
     >

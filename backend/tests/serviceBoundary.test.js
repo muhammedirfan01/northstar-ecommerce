@@ -1,13 +1,13 @@
 import test, { afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
-import User from "../models/User.js";
-import Product from "../models/Product.js";
-import ShoppingList from "../models/ShoppingList.js";
-import { addToCart } from "../services/cartService.js";
-import { addAddress } from "../services/addressService.js";
-import { getCustomer, setCustomerStatus } from "../services/adminService.js";
-import { updateProfile } from "../services/profileService.js";
-import createApp from "../app.js";
+import User from "../src/models/User.js";
+import Product from "../src/models/Product.js";
+import ShoppingList from "../src/models/ShoppingList.js";
+import { addToCart } from "../src/services/cartService.js";
+import { addAddress } from "../src/services/addressService.js";
+import { getCustomer, setCustomerStatus } from "../src/services/adminService.js";
+import { updateProfile } from "../src/services/profileService.js";
+import createApp from "../src/app.js";
 
 const id = "111111111111111111111111";
 const user = { id, email: "asha@example.test", role: "customer" };
@@ -51,7 +51,7 @@ test("shorter routes still protect account, admin, cart and address endpoints", 
   await new Promise(resolve => server.once("listening", resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
-    for (const route of ["/api/profile", "/api/admin/customers", "/api/cart", "/api/addresses"]) {
+    for (const route of ["/api/profile/photo/version", "/api/admin/customers", "/api/cart", "/api/addresses"]) {
       const response = await fetch(base + route);
       assert.equal(response.status, 401, route);
     }

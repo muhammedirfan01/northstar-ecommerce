@@ -1,16 +1,14 @@
-import { checkCategoryInput } from "../utils/validators/category.js";
-import { checkVariantInput } from "../utils/validators/variant.js";
+import { validateCategoryForm } from "../src/services/categoryService.js";
+import { validateVariantForm, validateVariantOptions } from "../src/services/variantService.js";
 import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import Product from "../models/Product.js";
-import { defaultVariant, variantOptions } from "../utils/variantSelection.js";
-import { validateVariantOptions } from "../utils/variantOptions.js";
-import { updateVariantTotals } from "../utils/product.js";
-import { productIsAvailable } from "../utils/productAvailability.js";
-import { describeCartItem } from "../utils/shopping.js";
-const categorySchema = validationCase(checkCategoryInput);
-const variantSchema = validationCase(checkVariantInput);
+import Product from "../src/models/Product.js";
+import { getDefaultVariant, getVariantOptions, updateVariantTotals, productIsAvailable } from "../src/services/catalogService.js";
+import { getCartItemDetails } from "../src/services/shoppingService.js";
+
+const categorySchema = validationCase(validateCategoryForm);
+const variantSchema = validationCase(validateVariantForm);
 const id = "111111111111111111111111";
 const variant = {
   name: "Burgundy / Large",
@@ -130,7 +128,7 @@ test("combination validation ignores option order and name case", () => {
     },
   );
   assert.deepEqual(
-    variantOptions({
+    getVariantOptions({
       colorName: "Black",
       memory: "16 GB",
     }),
@@ -167,10 +165,10 @@ test("the chosen default controls display price, with an available fallback", ()
   updateVariantTotals(product);
   assert.equal(product.pricePaise, 20000);
   assert.equal(product.stock, 5);
-  assert.equal(defaultVariant(product).name, "Premium");
+  assert.equal(getDefaultVariant(product).name, "Premium");
   product.variants[1].stock = 0;
   updateVariantTotals(product);
-  assert.equal(defaultVariant(product).name, "Standard");
+  assert.equal(getDefaultVariant(product).name, "Standard");
   assert.equal(product.pricePaise, 10000);
 });
 test("hidden parent categories invalidate customer products and variant images reach the cart", () => {
@@ -211,7 +209,7 @@ test("hidden parent categories invalidate customer products and variant images r
   };
   assert.equal(productIsAvailable(data), false);
   data.category.parent.isListed = true;
-  const item = describeCartItem(
+  const item = getCartItemDetails(
     {
       _id: id,
       productId: product._id,

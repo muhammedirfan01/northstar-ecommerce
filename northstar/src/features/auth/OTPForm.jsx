@@ -1,4 +1,4 @@
-import { otpTiming } from "../../utils/otpTiming.js";
+import { otpTiming } from "./otpTiming.js";
 import { useEffect, useState } from "react";
 import API from "../../api/API.js";
 function formatTime(seconds) {

@@ -1,28 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { settingsForm, campaignForm } from "../utils/validators/business.js";
-import { DEFAULT_SETTINGS } from "../models/StoreSettings.js";
-import { bestOffer } from "../utils/offerPricing.js";
-import { reportQuery } from "../services/salesReportService.js";
-const settings = () => ({ ...DEFAULT_SETTINGS, version: 0 });
-test("settings reject secrets, unsafe amounts and all payment methods disabled", () => {
-  assert.deepEqual(settingsForm(settings()), DEFAULT_SETTINGS);
-  for (const extra of [
-    { RAZORPAY_KEY_SECRET: "fixture" },
-    { shippingChargePaise: 1.5 },
-    { taxBasisPoints: -1 },
-    { codEnabled: false, onlineEnabled: false },
-  ])
-    assert.throws(
-      () => settingsForm({ ...settings(), ...extra }),
-      (e) => e.status === 400,
-    );
-  assert.equal(
-    settingsForm({ ...settings(), freeShippingAbovePaise: null })
-      .freeShippingAbovePaise,
-    null,
-  );
-});
+import { validateOfferForm } from "../src/services/campaignService.js";
+import { findBestOffer } from "../src/services/catalogService.js";
+import { validateReportFilters } from "../src/services/salesReportService.js";
+
 test("campaigns validate dates, targets and whole paise/percent values", () => {
   const form = {
     name: "Test campaign",
@@ -35,7 +16,7 @@ test("campaigns validate dates, targets and whole paise/percent values", () => {
     startDate: "2026-01-01T00:00:00Z",
     expiryDate: "2027-01-01T00:00:00Z",
   };
-  assert.equal(campaignForm(form).name, form.name);
+  assert.equal(validateOfferForm(form).name, form.name);
   for (const extra of [
     { discountValue: 101 },
     { scope: "product" },
@@ -44,7 +25,7 @@ test("campaigns validate dates, targets and whole paise/percent values", () => {
     { discountType: "fixed", discountValue: 0.1 },
   ])
     assert.throws(
-      () => campaignForm({ ...form, ...extra }),
+      () => validateOfferForm({ ...form, ...extra }),
       (e) => e.status === 400,
     );
 });
@@ -65,9 +46,9 @@ test("best offer honors parent category, variants' price, per-unit cap, dates an
     discountType: "percentage",
     discountValue: 10,
   };
-  assert.equal(bestOffer(product, 1000, 2, [offer], now).discount, 200);
+  assert.equal(findBestOffer(product, 1000, 2, [offer], now).discount, 200);
   assert.equal(
-    bestOffer(
+    findBestOffer(
       product,
       1000,
       2,
@@ -77,7 +58,7 @@ test("best offer honors parent category, variants' price, per-unit cap, dates an
     2000,
   );
   assert.equal(
-    bestOffer(product, 1000, 1, [offer, { ...offer, _id: "a" }], now)
+    findBestOffer(product, 1000, 1, [offer, { ...offer, _id: "a" }], now)
       .campaignId,
     "a",
   );
@@ -88,12 +69,12 @@ test("best offer honors parent category, variants' price, per-unit cap, dates an
     { targetId: "unrelated" },
   ])
     assert.equal(
-      bestOffer(product, 1000, 1, [{ ...offer, ...change }], now),
+      findBestOffer(product, 1000, 1, [{ ...offer, ...change }], now),
       null,
     );
 });
 test("sales dates use inclusive India boundaries, leap validation and bounded ranges", () => {
-  const q = reportQuery({
+  const q = validateReportFilters({
     query: { from: "2026-11-10", to: "2026-11-10", sort: "total-desc" },
   });
   assert.equal(
@@ -113,7 +94,7 @@ test("sales dates use inclusive India boundaries, leap validation and bounded ra
     { unknown: 1 },
   ])
     assert.throws(
-      () => reportQuery({ query }),
+      () => validateReportFilters({ query }),
       (e) => e.status === 400,
     );
 });

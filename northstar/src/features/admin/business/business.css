@@ -14,34 +14,6 @@
   color: #68758a;
   line-height: 1.6;
 }
-.business-settings {
-  max-width: 1000px;
-}
-.business-settings .catalog-fields {
-  padding: 0;
-  border: 0;
-}
-.admin-settings .cm-heading { margin-bottom: 18px; }
-.admin-settings .business-settings { max-width: none; }
-.admin-settings .catalog-fields {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  gap: 18px;
-  margin: 0;
-  min-width: 0;
-}
-.admin-settings .business-card { padding: 20px; margin: 0; }
-.admin-settings .business-card h2 { font: 600 15px Arial, sans-serif; margin-bottom: 18px; color: #242424; }
-.admin-settings .catalog-form-grid { gap: 14px; }
-.admin-settings .catalog-fields > section:nth-child(2) .catalog-form-grid { grid-template-columns: 1fr; }
-.admin-settings .catalog-fields input { min-height: 36px; }
-.admin-settings .catalog-fields textarea { min-height: 66px; resize: vertical; }
-.admin-settings .catalog-fields > .cm-notice,
-.settings-save-row { grid-column: 1 / -1; }
-.settings-save-row { display: flex; justify-content: flex-end; }
-@media (max-width: 850px) {
-  .admin-settings .catalog-fields { grid-template-columns: 1fr; }
-}
 .business-check {
   display: flex !important;
   align-items: center;

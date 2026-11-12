@@ -1,11 +1,11 @@
 import test, { afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
-import User from "../models/User.js";
-import createApp from "../app.js";
-import { createToken } from "../utils/jwt.js";
-import { AUTH_COOKIE_NAME } from "../config/jwt.js";
-import { publicUser } from "../utils/user.js";
-import { getCustomer } from "../controllers/adminController.js";
+import User from "../src/models/User.js";
+import createApp from "../src/app.js";
+import { createLoginToken } from "../src/utils/jwt.js";
+import { AUTH_COOKIE_NAME } from "../src/config/jwt.js";
+import { formatUser } from "../src/utils/user.js";
+import { getCustomer } from "../src/controllers/adminController.js";
 
 const id = "111111111111111111111111";
 const user = {
@@ -29,7 +29,7 @@ test("current-user response provides a complete photo URL without changing store
   const origin = `http://127.0.0.1:${server.address().port}`;
   try {
     const response = await fetch(origin + "/api/auth/me", {
-      headers: { Cookie: `${AUTH_COOKIE_NAME}=${createToken(user)}` },
+      headers: { Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(user)}` },
     });
     assert.equal(response.status, 200);
     assert.equal(
@@ -45,7 +45,7 @@ test("current-user response provides a complete photo URL without changing store
 test("existing Cloudinary profile URLs are returned unchanged", () => {
   const source = "https://res.cloudinary.com/example/image/upload/avatar.png";
   assert.equal(
-    publicUser(
+    formatUser(
       { ...user, profileImage: source },
       "https://api.example.test/api",
     ).profileImage,
@@ -79,9 +79,9 @@ test("admin customer responses provide a complete customer-photo URL", async () 
 });
 
 test("public user photo URLs support API origins without mutating records", () => {
-  assert.equal(publicUser(user).profileImage, user.profileImage);
-  assert.equal(publicUser(user, "https://api.example.test/api").profileImage,
+  assert.equal(formatUser(user).profileImage, user.profileImage);
+  assert.equal(formatUser(user, "https://api.example.test/api").profileImage,
     "https://api.example.test/api/profile/photo/photo-version");
-  assert.equal(publicUser({ ...user, profileImage: "" }, "https://api.example.test/api").profileImage, "");
+  assert.equal(formatUser({ ...user, profileImage: "" }, "https://api.example.test/api").profileImage, "");
   assert.equal(user.profileImage, "/profile/photo/photo-version");
 });

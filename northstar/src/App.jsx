@@ -10,10 +10,10 @@ import AdminPayments from "./features/admin/operations/AdminPayments.jsx";
 import AdminReturns from "./features/admin/operations/AdminReturns.jsx";
 import CustomerOrders from "./features/orders/CustomerOrders.jsx";
 import ReturnRequest from "./features/orders/ReturnRequest.jsx";
-import Orders from "./features/orders/Orders.jsx";
+import AdminOrderDetails from "./features/admin/operations/AdminOrderDetails.jsx";
 import PaymentResult from "./features/orders/PaymentResult.jsx";
 import AccountRestrictionDialog from "./features/auth/AccountRestrictionDialog.jsx";
-import { AccountStatus } from "./constants/statuses.js";
+import { AccountStatus } from "./status/statuses.js";
 import { restrictionDetails } from "./api/restriction.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import API from "./api/API.js";
@@ -455,7 +455,7 @@ function AppContent() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="orders" element={<AdminOrders />} />
-            <Route path="orders/:id" element={<Orders />} />
+            <Route path="orders/:id" element={<AdminOrderDetails />} />
             <Route path="inventory" element={<AdminInventory />} />
             <Route path="coupons" element={<Coupons />} />
             <Route path="offers" element={<Offers />} />

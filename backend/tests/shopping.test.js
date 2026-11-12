@@ -1,20 +1,15 @@
-import { productIsAvailable } from "../utils/productAvailability.js";
+import { productIsAvailable } from "../src/services/catalogService.js";
 import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import Product from "../models/Product.js";
-import {
-  checkShoppingAdd,
-  checkShoppingQuantity,
-  checkShoppingWish,
-  checkShoppingCheckout,
-} from "../utils/validators/shopping.js";
-import { describeCartItem } from "../utils/shopping.js";
+import Product from "../src/models/Product.js";
+import { validateCartItem, validateCartQuantity, validateWishlistItem } from "../src/utils/shoppingValidation.js";
+import { getCartItemDetails } from "../src/services/shoppingService.js";
+
 const shoppingSchemas = {
-  add: validationCase(checkShoppingAdd),
-  quantity: validationCase(checkShoppingQuantity),
-  wish: validationCase(checkShoppingWish),
-  checkout: validationCase(checkShoppingCheckout),
+  add: validationCase(validateCartItem),
+  quantity: validationCase(validateCartQuantity),
+  wish: validationCase(validateWishlistItem),
 };
 const productId = "111111111111111111111111";
 const variantId = "222222222222222222222222";
@@ -71,12 +66,6 @@ test("cart accepts only whole quantities within the limit and rejects browser pr
     }).success,
     false,
   );
-  assert.equal(
-    shoppingSchemas.checkout.safeParse({
-      expectedTotalPaise: -1,
-    }).success,
-    false,
-  );
 });
 test("shopping availability excludes drafts, unlisted categories/products and zero stock", () => {
   const product = productFixture();
@@ -117,12 +106,12 @@ test("cart line prices are recomputed using current catalog values", () => {
     variantId: null,
     quantity: 2,
   };
-  assert.equal(describeCartItem(item, product).subtotalPaise, 20000);
+  assert.equal(getCartItemDetails(item, product).subtotalPaise, 20000);
   product.pricePaise = 15000;
-  assert.equal(describeCartItem(item, product).subtotalPaise, 30000);
+  assert.equal(getCartItemDetails(item, product).subtotalPaise, 30000);
   product.stock = 1;
-  assert.equal(describeCartItem(item, product).valid, false);
-  assert.equal(describeCartItem(item, product).maxQuantity, 1);
+  assert.equal(getCartItemDetails(item, product).valid, false);
+  assert.equal(getCartItemDetails(item, product).maxQuantity, 1);
 });
 test("cart validates the selected variant's own price, stock and visibility", () => {
   const product = productFixture();
@@ -138,10 +127,10 @@ test("cart validates the selected variant's own price, stock and visibility", ()
     variantId,
     quantity: 3,
   };
-  assert.equal(describeCartItem(item, product).subtotalPaise, 75000);
-  assert.equal(describeCartItem(item, product).valid, true);
+  assert.equal(getCartItemDetails(item, product).subtotalPaise, 75000);
+  assert.equal(getCartItemDetails(item, product).valid, true);
   assert.equal(
-    describeCartItem(
+    getCartItemDetails(
       {
         ...item,
         quantity: 4,
@@ -151,9 +140,9 @@ test("cart validates the selected variant's own price, stock and visibility", ()
     false,
   );
   product.variants[0].isListed = false;
-  assert.equal(describeCartItem(item, product).available, false);
+  assert.equal(getCartItemDetails(item, product).available, false);
   assert.equal(
-    describeCartItem(
+    getCartItemDetails(
       {
         ...item,
         variantId: productId,
@@ -169,26 +158,26 @@ test("deleted products and removed variants remain removable invalid cart lines"
     variantId,
     quantity: 1,
   };
-  assert.equal(describeCartItem(item, null).available, false);
-  assert.equal(describeCartItem(item, productFixture()).available, false);
+  assert.equal(getCartItemDetails(item, null).available, false);
+  assert.equal(getCartItemDetails(item, productFixture()).available, false);
 });
 
 test("cart add/update and displayed stock share the nine-unit limit", () => {
-  assert.equal(checkShoppingAdd({ productId, quantity: 9 }).quantity, 9);
-  assert.equal(checkShoppingQuantity({ quantity: 9 }).quantity, 9);
-  assert.throws(() => checkShoppingQuantity({ quantity: 10 }), { status: 400 });
+  assert.equal(validateCartItem({ productId, quantity: 9 }).quantity, 9);
+  assert.equal(validateCartQuantity({ quantity: 9 }).quantity, 9);
+  assert.throws(() => validateCartQuantity({ quantity: 10 }), { status: 400 });
   const product = productFixture();
   const item = { productId, quantity: 9 };
-  assert.equal(describeCartItem(item, product).maxQuantity, 9);
-  assert.equal(describeCartItem(item, product).valid, true);
-  const exceeded = describeCartItem({ ...item, quantity: 10 }, product);
+  assert.equal(getCartItemDetails(item, product).maxQuantity, 9);
+  assert.equal(getCartItemDetails(item, product).valid, true);
+  const exceeded = getCartItemDetails({ ...item, quantity: 10 }, product);
   assert.equal(exceeded.valid, false);
   assert.equal(exceeded.error, "Maximum 9 units per option, including units already in your cart.");
 });
 
 test("low stock has a separate message from the nine-unit maximum", () => {
   const product = productFixture(); product.stock = 5;
-  const result = describeCartItem({ productId, quantity: 6 }, product);
+  const result = getCartItemDetails({ productId, quantity: 6 }, product);
   assert.equal(result.maxQuantity, 5);
   assert.equal(result.error, "Only 5 units are available for this option.");
 });

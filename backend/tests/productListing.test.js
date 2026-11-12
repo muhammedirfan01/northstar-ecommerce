@@ -1,8 +1,8 @@
-import test, { afterEach, mock } from 'node:test';
-import assert from 'node:assert/strict';
-import Product from '../models/Product.js';
-import { listProducts } from '../services/productService.js';
-import { categoryPopulation } from '../utils/productAvailability.js';
+import test, { afterEach, mock } from "node:test";
+import assert from "node:assert/strict";
+import Product from "../src/models/Product.js";
+import { listProducts } from "../src/services/productService.js";
+import { categoryDetails } from "../src/services/catalogService.js";
 
 afterEach(() => mock.restoreAll());
 
@@ -26,7 +26,7 @@ for (const empty of [false, true]) {
     assert.equal(result.body.success, true);
     assert.deepEqual(find.mock.calls[0].arguments, [{ deletedAt: null }]);
     assert.deepEqual(calls, [
-      ['populate', categoryPopulation],
+      ['populate', categoryDetails],
       ['sort', { createdAt: -1, _id: -1 }],
       ['skip', empty ? 0 : 10],
       ['limit', 10],

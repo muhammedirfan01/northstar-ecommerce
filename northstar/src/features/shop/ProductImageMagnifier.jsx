@@ -3,11 +3,10 @@ const ZOOM = 2.5;
 export default function ProductImageMagnifier({
   image,
   productName,
-  onEnlarge,
 }) {
   const [position, setPosition] = useState(null);
   function magnify(event) {
-    // Touch screens use the full-image view instead of a hover lens.
+    // Show the magnifier only for a mouse on a large screen.
     if (
       event.pointerType !== "mouse" ||
       !window.matchMedia(
@@ -42,13 +41,7 @@ export default function ProductImageMagnifier({
   }
   return (
     <div className="pd-magnifier">
-      <button
-        type="button"
-        className="pd-main-image"
-        aria-label="Zoom product image"
-        onClick={onEnlarge}
-        onBlur={() => setPosition(null)}
-      >
+      <div className="pd-main-image">
         <span
           className="pd-image-stage"
           onPointerMove={magnify}
@@ -68,13 +61,8 @@ export default function ProductImageMagnifier({
             />
           )}
         </span>
-        <span className="pd-zoom-hint">
-          <span className="pd-hover-hint">Move over the image to magnify</span>
-          <span className="pd-touch-hint">
-            Tap or click the image to enlarge
-          </span>
-        </span>
-      </button>
+        <span className="pd-zoom-hint">Move over the image to magnify</span>
+      </div>
       {position && (
         <div
           className="pd-magnifier-preview"

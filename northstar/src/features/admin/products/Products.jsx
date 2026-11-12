@@ -1,4 +1,4 @@
-import { ProductStatus, ProductStatusLabel } from "../../../constants/statuses.js";
+import { ProductStatus, ProductStatusLabel } from "../../../status/statuses.js";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Plus, Search, X } from "lucide-react";
@@ -200,6 +200,11 @@ export default function Products() {
           {message}
         </p>
       )}
+      <div className="products-actions">
+        <Link className="catalog-primary" to="/admin/products/new">
+          <Plus size={16} /> Add product
+        </Link>
+      </div>
       <div className="cm-toolbar">
         <label className="cm-filter">Sort by
           <select value={query.sort} onChange={(event) => change({ sort: event.target.value })}>
@@ -285,9 +290,6 @@ export default function Products() {
         >
           Clear filters
         </button>
-        <Link className="catalog-primary catalog-add" to="/admin/products/new">
-          <Plus size={16} /> Add product
-        </Link>
       </div>
       {error && (
         <div className="cm-notice cm-error" role="alert">

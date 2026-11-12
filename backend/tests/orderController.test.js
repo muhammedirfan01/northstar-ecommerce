@@ -1,18 +1,17 @@
 import test, { afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
-import ShoppingList from "../models/ShoppingList.js";
-import Product from "../models/Product.js";
-import Coupon from "../models/Coupon.js";
-import StoreSettings from "../models/StoreSettings.js";
-import Campaign from "../models/Campaign.js";
-import { checkout, placeOrder } from "../controllers/orderController.js";
+import ShoppingList from "../src/models/ShoppingList.js";
+import Product from "../src/models/Product.js";
+import Coupon from "../src/models/Coupon.js";
+import Campaign from "../src/models/Campaign.js";
+import { checkout, placeOrder } from "../src/controllers/orderController.js";
 import {
-  makeServiceInput,
-  makePublicServiceInput,
-} from "../controllers/makeServiceInput.js";
-import router from "../routes/orderRoutes.js";
-import { requireAuth, requireCustomer } from "../middlewares/auth.js";
-import noCache from "../middlewares/noCache.js";
+  inputFrom,
+  inputWithUrl,
+} from "../src/controllers/requestInput.js";
+import router from "../src/routes/orderRoutes.js";
+import { requireAuth, requireCustomer } from "../src/middlewares/auth.js";
+import noCache from "../src/middlewares/noCache.js";
 
 afterEach(() => mock.restoreAll());
 const id = "111111111111111111111111";
@@ -69,7 +68,7 @@ async function response(req) {
   return { status, body };
 }
 test("adapter keeps raw input references and supplies empty defaults", () => {
-  assert.deepEqual(makeServiceInput({}), {
+  assert.deepEqual(inputFrom({}), {
     body: {},
     user: undefined,
     params: {},
@@ -86,9 +85,9 @@ test("adapter keeps raw input references and supplies empty defaults", () => {
     files: [],
   };
   for (const key of Object.keys(req))
-    assert.equal(makeServiceInput(req)[key], req[key]);
+    assert.equal(inputFrom(req)[key], req[key]);
   assert.equal(
-    makePublicServiceInput({
+    inputWithUrl({
       headers: { host: "shop.test" },
       protocol: "https",
     }).apiBaseUrl,
@@ -250,10 +249,10 @@ test("unexpected order errors retain the existing generic 500 response", async (
   });
   assert.equal(log.mock.calls.length, 1);
 });
-import createApp from "../app.js";
-import User from "../models/User.js";
-import { createToken } from "../utils/jwt.js";
-import { AUTH_COOKIE_NAME } from "../config/jwt.js";
+import createApp from "../src/app.js";
+import User from "../src/models/User.js";
+import { createLoginToken } from "../src/utils/jwt.js";
+import { AUTH_COOKIE_NAME } from "../src/config/jwt.js";
 
 test("order HTTP endpoint preserves auth, customer restriction and checkout contract", async () => {
   const oldSecret = process.env.JWT_SECRET;
@@ -261,12 +260,6 @@ test("order HTTP endpoint preserves auth, customer restriction and checkout cont
   const s = setup();
   Object.assign(s.req.user, { id, role: "customer", isEmailVerified: true });
   mock.method(User, "findById", () => ({ select: async () => s.req.user }));
-  mock.method(StoreSettings, "findById", () => ({
-    session() {
-      return this;
-    },
-    lean: async () => null,
-  }));
   mock.method(Campaign, "find", () => ({
     sort() {
       return this;
@@ -281,7 +274,7 @@ test("order HTTP endpoint preserves auth, customer restriction and checkout cont
   const url = `http://127.0.0.1:${server.address().port}/api/orders/preview`;
   const headers = {
     "Content-Type": "application/json",
-    Cookie: `${AUTH_COOKIE_NAME}=${createToken(s.req.user)}`,
+    Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(s.req.user)}`,
   };
   try {
     assert.equal((await fetch(url, { method: "POST" })).status, 401);

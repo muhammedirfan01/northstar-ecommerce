@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import Product from '../models/Product.js';
-import { deleteProduct, restoreProduct } from '../services/productService.js';
+import Product from "../src/models/Product.js";
+import { deleteProduct, restoreProduct } from "../src/services/productService.js";
 
 const id='111111111111111111111111';
 function legacyProduct(imageCount) {

@@ -1,16 +1,16 @@
-import test, { afterEach, mock } from 'node:test';
-import assert from 'node:assert/strict';
-import Product from '../models/Product.js';
-import Category from '../models/Category.js';
-import { listProducts as adminProducts } from '../services/productService.js';
-import { listProducts as shopProducts } from '../services/storeService.js';
-import { saveVariant } from '../services/variantService.js';
-import { checkCatalogQuery } from '../utils/validators/catalog.js';
-import { checkStoreQuery } from '../utils/validators/store.js';
-import { statusSortPipeline } from '../utils/productStatus.js';
-import { requireAuth } from '../middlewares/auth.js';
-import User from '../models/User.js';
-import { createToken } from '../utils/jwt.js';
+import Campaign from "../src/models/Campaign.js";
+import test, { afterEach, mock } from "node:test";
+import assert from "node:assert/strict";
+import Product from "../src/models/Product.js";
+import Category from "../src/models/Category.js";
+import { listProducts as adminProducts, getProductStatusSortSteps } from "../src/services/productService.js";
+import { listProducts as shopProducts, validateStoreFilters } from "../src/services/storeService.js";
+import { saveVariant } from "../src/services/variantService.js";
+import { checkCatalogQuery } from "../src/services/catalogService.js";
+import { requireAuth } from "../src/middlewares/auth.js";
+import User from "../src/models/User.js";
+import { createLoginToken } from "../src/utils/jwt.js";
+
 const id = '111111111111111111111111';
 const child = '222222222222222222222222';
 afterEach(() => mock.restoreAll());
@@ -20,10 +20,11 @@ function query(value) {
   return q;
 }
 test('subcategory query accepts IDs and rejects malformed/array inputs', () => {
-  assert.equal(checkStoreQuery({ subcategory: child }).subcategory, child);
-  for (const subcategory of ['bad', [child], { $ne: null }]) assert.throws(() => checkStoreQuery({ subcategory }));
+  assert.equal(validateStoreFilters({ subcategory: child }).subcategory, child);
+  for (const subcategory of ['bad', [child], { $ne: null }]) assert.throws(() => validateStoreFilters({ subcategory }));
 });
 test('shop intersects subcategory with parent and visible-category constraints', async () => {
+  mock.method(Campaign, "find", () => ({ sort() { return this; }, session() { return this; }, lean: async () => [] }));
   mock.method(Category, 'find', (filter) => query(filter.parent ? [{ _id: child }] : [{ _id: id, isListed: true }, { _id: child, isListed: true }]));
   let filter;
   mock.method(Product, 'countDocuments', async (value) => { filter = value; return 0; });
@@ -48,10 +49,10 @@ test('status sort is validated and ranks the full result before pagination', asy
   assert.deepEqual(pipeline[2], { $sort: { statusRank: 1, createdAt: -1, _id: -1 } });
   assert.deepEqual(pipeline.slice(3,5), [{ $skip: 10 }, { $limit: 10 }]);
   assert.equal(result.body.data.pagination.totalPages, 3);
-  assert.equal(statusSortPipeline({}, 'status-desc', 1, 10)[2].$sort.statusRank, -1);
+  assert.equal(getProductStatusSortSteps({}, 'status-desc', 1, 10)[2].$sort.statusRank, -1);
 });
 test('status ranking handles overlapping flags and deterministic ties', () => {
-  const pipeline = statusSortPipeline({}, 'status-asc', 1, 2);
+  const pipeline = getProductStatusSortSteps({}, 'status-asc', 1, 2);
   const expression = pipeline[1].$addFields.statusRank.$switch;
   function evaluate(expr, item) {
     if (typeof expr === 'string' && expr.startsWith('$')) return item[expr.slice(1)];
@@ -89,7 +90,7 @@ test('variant edit cannot remove images below three or retain foreign images', a
   const product = new Product({ variants:[{ name:'Small', pricePaise:100, stock:1, images:[1,2,3].map((n) => ({publicId:String(n),url:'/image.webp'})) }] });
   mock.method(Product,'findById',async () => product);
   const variant = product.variants[0];
-  const input = { params:{id,variantId:String(variant._id)}, body:{name:'Small',price:'10',regularPrice:'',stock:'1',isListed:true,retainedImageIds:variant.images.slice(0,2).map((image) => String(image._id))} };
+  const input = { params:{id,variantId:String(variant._id)}, body:{version:0,name:'Small',price:'10',regularPrice:'',stock:'1',isListed:true,retainedImageIds:variant.images.slice(0,2).map((image) => String(image._id))} };
   await assert.rejects(saveVariant(input), /at least three images/);
   input.body.retainedImageIds = [id,child];
   await assert.rejects(saveVariant(input), /belongs to another variant/);
@@ -99,7 +100,7 @@ test('blocked and deleted sessions return explicit restriction codes before sess
   for (const deletedAt of [null,new Date()]) {
     mock.method(User,'findById',() => ({select:async () => ({isEmailVerified:true,isBlocked:true,deletedAt,authVersion:2})}));
     let body, status;
-    await requireAuth({cookies:{'northstar.token':createToken({id,authVersion:1})}}, {status(value){status=value;return this;},json(value){body=value;},clearCookie(){}}, () => assert.fail('Restricted request must stop'));
+    await requireAuth({cookies:{'northstar.token':createLoginToken({id,authVersion:1})}}, {status(value){status=value;return this;},json(value){body=value;},clearCookie(){}}, () => assert.fail('Restricted request must stop'));
     assert.equal(status,403);
     assert.equal(body.code,deletedAt ? 'ACCOUNT_DELETED' : 'ACCOUNT_BLOCKED');
     assert.match(body.message,/restricted/);

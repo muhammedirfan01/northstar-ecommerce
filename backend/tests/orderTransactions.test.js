@@ -1,31 +1,29 @@
-import { sendMessage } from "../services/supportService.js";
-import { backfillRequestReferences } from "../services/requestNumberService.js";
-import OrderCounter from "../models/OrderCounter.js";
-import { backfillOrderNumbers } from "../services/orderNumberService.js";
-import WalletTransaction from "../models/WalletTransaction.js";
-import SupportRequest from "../models/SupportRequest.js";
-import { postalDirectory } from "../services/postalService.js";
+import { Writable } from "node:stream";
+import { v2 as cloudinary } from "cloudinary";
+import { sendMessage } from "../src/services/supportService.js";
+import { backfillRequestReferences } from "../src/services/requestNumberService.js";
+import OrderCounter from "../src/models/OrderCounter.js";
+import { backfillOrderNumbers } from "../src/services/orderNumberService.js";
+import WalletTransaction from "../src/models/WalletTransaction.js";
+import SupportRequest from "../src/models/SupportRequest.js";
+import { postalDirectory } from "../src/services/postalService.js";
 import sharp from "sharp";
-import PaymentWebhookReceipt from "../models/PaymentWebhookReceipt.js";
-import ReturnPhoto from "../models/ReturnPhoto.js";
-import StockAdjustment from "../models/StockAdjustment.js";
+import ReturnPhoto from "../src/models/ReturnPhoto.js";
+import StockAdjustment from "../src/models/StockAdjustment.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
 import { randomUUID, createHmac } from "node:crypto";
-import User from "../models/User.js";
-import Product from "../models/Product.js";
-import Category from "../models/Category.js";
-import ShoppingList from "../models/ShoppingList.js";
-import Order from "../models/order.js";
-import Coupon from "../models/Coupon.js";
-import Campaign from "../models/Campaign.js";
-import StoreSettings from "../models/StoreSettings.js";
-import createApp from "../app.js";
-import { createToken } from "../utils/jwt.js";
-import { AUTH_COOKIE_NAME } from "../config/jwt.js";
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import User from "../src/models/User.js";
+import Product from "../src/models/Product.js";
+import Category from "../src/models/Category.js";
+import ShoppingList from "../src/models/ShoppingList.js";
+import Order from "../src/models/Order.js";
+import Coupon from "../src/models/Coupon.js";
+import Campaign from "../src/models/Campaign.js";
+import createApp from "../src/app.js";
+import { createLoginToken } from "../src/utils/jwt.js";
+import { AUTH_COOKIE_NAME } from "../src/config/jwt.js";
 import { writeFile } from "node:fs/promises";
 
 // Opt-in integration tests only ever touch a fresh, dedicated database.
@@ -55,7 +53,6 @@ test(
         Order.init(),
         Coupon.init(),
         Campaign.init(),
-        StoreSettings.init(),
       ]);
       server = createApp().listen(0, "127.0.0.1");
       await new Promise((resolve) => server.once("listening", resolve));
@@ -73,7 +70,6 @@ test(
           Order,
           Coupon,
           Campaign,
-          StoreSettings,
         ])
           await model.deleteMany({});
         const userId = oid(),
@@ -155,12 +151,95 @@ test(
           method,
           headers: {
             "Content-Type": "application/json",
-            Cookie: `${AUTH_COOKIE_NAME}=${createToken(user)}`,
+            Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(user)}`,
           },
           body: body ? JSON.stringify(body) : undefined,
         });
         return { status: response.status, body: await response.json() };
       }
+      await t.test("product forms reject stock changed by checkout and accept a refreshed version", async () => {
+        const s = await seed();
+        const images = [1, 2, 3].map(n => ({ _id: oid(), publicId: "fixture/" + n, url: "https://example.test/" + n }));
+        await Product.collection.updateOne({ _id: s.productId }, { $set: { images, description: "A test product description" } });
+        const before = await call(s.admin, `/admin/products/${s.productId}`);
+        const form = { version: before.body.data.product.version, name: "Updated test product", description: "An updated product description",
+          categoryId: String(s.categoryId), price: "100", regularPrice: "", stock: "10", isPublished: true, isListed: true,
+          highlights: [], specifications: [], retainedImageIds: images.map(image => String(image._id)) };
+        const placed = await call(s.customer, "/orders", "POST", s.body);
+        assert.equal(placed.status, 201, JSON.stringify(placed.body));
+        const stale = await call(s.admin, `/admin/products/${s.productId}`, "PATCH", form);
+        assert.equal(stale.status, 409, JSON.stringify(stale.body));
+        assert.equal((await Product.findById(s.productId)).stock, 9);
+        const missing = { ...form }; delete missing.version;
+        assert.equal((await call(s.admin, `/admin/products/${s.productId}`, "PATCH", missing)).status, 400);
+        const fresh = await call(s.admin, `/admin/products/${s.productId}`);
+        const saved = await call(s.admin, `/admin/products/${s.productId}`, "PATCH", {
+          ...form, version: fresh.body.data.product.version, stock: "9",
+        });
+        assert.equal(saved.status, 200, JSON.stringify(saved.body));
+        assert.equal(saved.body.data.product.stock, 9);
+      });
+      await t.test("purchased variants reject stale edits and deletion while unlisting preserves cancellation stock", async () => {
+        const s = await seed(), variantId = oid();
+        const images = [1, 2, 3].map(n => ({ _id: oid(), publicId: "fixture/" + n, url: "https://example.test/" + n }));
+        await Product.collection.updateOne({ _id: s.productId }, { $set: { images, stock: 3, description: "A test product description",
+          variants: [{ _id: variantId, name: "Original option", pricePaise: 10000, stock: 3, isListed: true, images }] } });
+        await ShoppingList.updateOne({ userId: s.userId }, { $set: { "cart.0.variantId": variantId } });
+        const form = { version: 0, name: "Original option", price: "100", regularPrice: "", stock: "3", isListed: true,
+          retainedImageIds: images.map(image => String(image._id)) };
+        const placed = await call(s.customer, "/orders", "POST", s.body);
+        assert.equal(placed.status, 201, JSON.stringify(placed.body));
+        const route = `/admin/products/${s.productId}/variants/${variantId}`;
+        assert.equal((await call(s.admin, route, "PATCH", form)).status, 409);
+        const deleted = await call(s.admin, route, "DELETE");
+        assert.equal(deleted.status, 409, JSON.stringify(deleted.body));
+        let product = await Product.findById(s.productId);
+        assert.equal(product.variants.id(variantId).stock, 2);
+        const unlisted = await call(s.admin, route, "PATCH", { ...form, version: product.__v, stock: "2", isListed: false });
+        assert.equal(unlisted.status, 200, JSON.stringify(unlisted.body));
+        const cancelled = await call(s.customer, `/orders/${placed.body.data.order.id}/cancel`, "POST", {});
+        assert.equal(cancelled.status, 200, JSON.stringify(cancelled.body));
+        product = await Product.findById(s.productId);
+        assert.equal(product.variants.id(variantId).stock, 3);
+        assert.equal(product.variants.id(variantId).isListed, false);
+        assert.equal(product.stock, 0);
+      });
+      await t.test("catalog price ranges and ordering follow available variants after the default sells out", async () => {
+        const s = await seed(), cheap = oid(), available = oid(), other = oid();
+        await Product.collection.updateOne({ _id: s.productId }, { $set: { stock: 3, defaultVariantId: cheap,
+          variants: [
+            { _id: cheap, name: "Cheap", pricePaise: 10000, stock: 1, isListed: true, images: [] },
+            { _id: available, name: "Available", pricePaise: 20000, stock: 2, isListed: true, images: [] },
+          ] } });
+        await ShoppingList.updateOne({ userId: s.userId }, { $set: { "cart.0.variantId": cheap } });
+        const placed = await call(s.customer, "/orders", "POST", s.body);
+        assert.equal(placed.status, 201, JSON.stringify(placed.body));
+        const original = await Product.findById(s.productId).lean();
+        assert.equal(original.pricePaise, 10000);
+        await Product.collection.insertOne({ ...original, _id: other, name: "Midprice product", pricePaise: 17500,
+          stock: 2, variants: [], defaultVariantId: null });
+        const filtered = await call(s.customer, "/products?minPrice=190&maxPrice=210");
+        assert.equal(filtered.status, 200, JSON.stringify(filtered.body));
+        assert.deepEqual(filtered.body.data.products.map(p => p.id), [String(s.productId)]);
+        assert.equal(filtered.body.data.products[0].pricePaise, 20000);
+        const ascending = await call(s.customer, "/products?sort=price-asc&limit=1&page=2");
+        assert.deepEqual(ascending.body.data.products.map(p => p.id), [String(s.productId)]);
+        const descending = await call(s.customer, "/products?sort=price-desc&limit=1&page=2");
+        assert.deepEqual(descending.body.data.products.map(p => p.id), [String(other)]);
+      });
+      await t.test("legacy profile photos remain protected and load through customer and admin photo routes", async () => {
+        const s = await seed(), version = randomUUID(), bytes = await sharp({ create: { width: 2, height: 2, channels: 3, background: "red" } }).jpeg().toBuffer();
+        await User.collection.updateOne({ _id: s.userId }, { $set: { profileImage: `/profile/photo/${version}`, profilePhoto: bytes } });
+        assert.equal((await User.findById(s.userId)).profilePhoto, undefined);
+        for (const [user, path] of [[s.customer, `/profile/photo/${version}`], [s.admin, `/admin/customers/${s.userId}/photo?version=${version}`]]) {
+          const response = await fetch(origin + path, { headers: { Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(user)}` } });
+          assert.equal(response.status, 200);
+          assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes);
+        }
+        assert.equal((await fetch(origin + `/profile/photo/${version}`)).status, 401);
+        assert.equal((await call(s.customer, `/admin/customers/${s.userId}/photo?version=${version}`)).status, 403);
+      });
+
       await t.test("delivered replacements allow new numbered requests and preserve earlier request history",async()=>{
         const s=await seed(20),placed=await call(s.customer,"/orders","POST",s.body),id=placed.body.data.order.id;
         await Order.updateOne({_id:id},{$set:{orderStatus:"delivered",paymentStatus:"paid"}});
@@ -810,7 +889,6 @@ test(
             "PATCH",
             {
               status: "closed",
-              note: "Reviewed with customer",
               version: selected.version,
             },
           );
@@ -844,7 +922,7 @@ test(
                 s.admin,
                 `/admin/customer-requests/${selected.id}`,
                 "PATCH",
-                { status: "open", note: "Reopened", version: 1 },
+                { status: "open", version: 1 },
               )
             ).status,
             200,
@@ -1029,14 +1107,14 @@ test(
         const found=await call(s.admin,"/admin/customer-requests?search=SUP-ORIGINAL-REFERENCE");
         assert.equal(found.status,200);
         assert.equal(found.body.data.requests[0].reference,"REQ-10010");
-        const saved=await call(s.admin,"/admin/customer-requests/"+legacy._id,"PATCH",{version,status:"open",note:"Following up"});
+        const saved=await call(s.admin,"/admin/customer-requests/"+legacy._id,"PATCH",{version,status:"open"});
         assert.equal(saved.status,200);
-        const progress=await call(s.admin,"/admin/customer-requests/"+legacy._id,"PATCH",{version:saved.body.data.request.version,status:"in_progress",note:"Checking the enquiry"});
+        const progress=await call(s.admin,"/admin/customer-requests/"+legacy._id,"PATCH",{version:saved.body.data.request.version,status:"in_progress"});
         assert.equal(progress.status,200);
         const filtered=await call(s.admin,"/admin/customer-requests?status=in_progress");
         assert.equal(filtered.body.data.requests.length,1);
         assert.equal(filtered.body.data.summary.in_progress,1);
-        const fulfilled=await call(s.admin,"/admin/customer-requests/"+legacy._id,"PATCH",{version:progress.body.data.request.version,status:"closed",note:"Completed"});
+        const fulfilled=await call(s.admin,"/admin/customer-requests/"+legacy._id,"PATCH",{version:progress.body.data.request.version,status:"closed"});
         assert.equal(fulfilled.status,200);
         assert.equal(fulfilled.body.data.request.status,"closed");
       });
@@ -1101,7 +1179,7 @@ test(
           postalDirectory.lookup = async () => ({
             state: "Kerala",
             districts: ["Ernakulam"],
-            cities: ["Kochi", "Ernakulam"],
+            states: ["Kerala"],
           });
           try {
             const body = {
@@ -1121,7 +1199,7 @@ test(
                 .length,
               1,
             );
-            body.city = "Fort Kochi";
+            body.city = "Ernakulam";
             const valid = await call(s.customer, "/addresses", "POST", body);
             assert.equal(valid.status, 201, JSON.stringify(valid.body));
             assert.equal(
@@ -1144,7 +1222,7 @@ test(
             const response = await fetch(origin + "/profile", {
               method: "PATCH",
               headers: {
-                Cookie: `${AUTH_COOKIE_NAME}=${createToken(s.customer)}`,
+                Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(s.customer)}`,
               },
               body: form,
             });
@@ -1394,11 +1472,11 @@ test(
           assert.equal(product.variants[0].stock, 2);
           const changed = await call(
             s.admin,
-            `/admin/inventory/${s.productId}`,
-            "PATCH",
-            { variantId: String(variantId), stock: 8, version: product.__v },
+            `/admin/inventory/${s.productId}/adjustments`,
+            "POST",
+            { variantId: String(variantId), quantity: 6, requestId: randomUUID(), version: product.__v },
           );
-          assert.equal(changed.status, 200, JSON.stringify(changed.body));
+          assert.equal(changed.status, 201, JSON.stringify(changed.body));
           assert.equal((await Product.findById(s.productId)).stock, 8);
         },
       );
@@ -1428,8 +1506,8 @@ test(
           assert.equal((await Order.findById(id)).paymentStatus, "paid");
           assert.equal(
             (
-              await call(s.admin, `/admin/inventory/${s.productId}`, "PATCH", {
-                stock: 12,
+              await call(s.admin, `/admin/inventory/${s.productId}/adjustments`, "POST", {
+                quantity: 3, requestId: randomUUID(),
                 version: 0,
                 variantId: null,
               })
@@ -1439,13 +1517,13 @@ test(
           const version = (await Product.findById(s.productId)).__v;
           assert.equal(
             (
-              await call(s.admin, `/admin/inventory/${s.productId}`, "PATCH", {
-                stock: 12,
+              await call(s.admin, `/admin/inventory/${s.productId}/adjustments`, "POST", {
+                quantity: 3, requestId: randomUUID(),
                 version,
                 variantId: null,
               })
             ).status,
-            200,
+            201,
           );
           assert.equal((await Product.findById(s.productId)).stock, 12);
         },
@@ -1539,7 +1617,40 @@ test(
       );
       await t.test(
         "customer product search, timeframe and authorized photo return workflow",
-        async () => {
+        async (t) => {
+          // Exercise the full HTTP/DB flow without sending evidence to a live account.
+          const oldEnv = {};
+          for (const key of ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]) {
+            oldEnv[key] = process.env[key];
+            process.env[key] = "return-photo-fixture";
+          }
+          t.after(() => {
+            for (const [key, value] of Object.entries(oldEnv))
+              if (value === undefined) delete process.env[key]; else process.env[key] = value;
+          });
+          const assets = new Map();
+          t.mock.method(cloudinary.uploader, "upload_stream", (options, callback) => {
+            const chunks = [];
+            return new Writable({
+              write(chunk, encoding, done) { chunks.push(chunk); done(); },
+              final(done) {
+                assets.set(options.public_id, Buffer.concat(chunks));
+                callback(null, { public_id: options.public_id, secure_url: "https://res.cloudinary.com/return-photo-fixture/image/authenticated/" + options.public_id + ".jpg" });
+                done();
+              },
+            });
+          });
+          t.mock.method(cloudinary.uploader, "destroy", async publicId => {
+            assets.delete(publicId); return { result: "ok" };
+          });
+          const realFetch = globalThis.fetch;
+          t.mock.method(globalThis, "fetch", async (url, options) => {
+            if (String(url).startsWith("https://res.cloudinary.com/return-photo-fixture/")) {
+              const publicId = [...assets.keys()].find(key => new URL(String(url)).pathname.endsWith(key + ".jpg"));
+              return publicId ? new Response(assets.get(publicId), { headers: { "content-type": "image/jpeg" } }) : new Response(null, { status: 404 });
+            }
+            return realFetch(url, options);
+          });
           const s = await seed();
           const placed = await call(s.customer, "/orders", "POST", s.body),
             id = placed.body.data.order.id;
@@ -1603,7 +1714,7 @@ test(
             const response = await fetch(origin + `/orders/${id}/return`, {
               method: "POST",
               headers: {
-                Cookie: `${AUTH_COOKIE_NAME}=${createToken(s.customer)}`,
+                Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(s.customer)}`,
               },
               body: form,
             });
@@ -1627,6 +1738,10 @@ test(
           assert.equal(request.photos.length, 1);
           assert.ok(request.reference.startsWith("RET-"));
           assert.equal(request.photos[0].bytes, undefined);
+          const storedPhoto = await ReturnPhoto.collection.findOne({ orderId: new mongoose.Types.ObjectId(id) });
+          assert.equal(storedPhoto.bytes, undefined);
+          assert.match(storedPhoto.publicId, /^northstar\/returns\//);
+          assert.match(storedPhoto.url, /^https:/);
           assert.equal((await upload()).status, 200);
           assert.equal(
             await ReturnPhoto.countDocuments({ orderId: id }),
@@ -1642,7 +1757,7 @@ test(
             return fetch(
               origin + `/${route}/${id}/return/photos/${request.photos[0].id}`,
               {
-                headers: { Cookie: `${AUTH_COOKIE_NAME}=${createToken(user)}` },
+                headers: { Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(user)}` },
               },
             );
           }
@@ -1767,7 +1882,7 @@ test(
           );
           const invoice = await fetch(origin + `/orders/${id}/invoice`, {
             headers: {
-              Cookie: `${AUTH_COOKIE_NAME}=${createToken(s.customer)}`,
+              Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(s.customer)}`,
             },
           });
           assert.equal(invoice.status, 200);
@@ -1791,7 +1906,7 @@ test(
             (
               await fetch(origin + `/orders/${id}/invoice`, {
                 headers: {
-                  Cookie: `${AUTH_COOKIE_NAME}=${createToken(stranger)}`,
+                  Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(stranger)}`,
                 },
               })
             ).status,
@@ -1823,9 +1938,7 @@ test(
           assert.equal(inventory.body.data.summary.lowStock, 1);
           const body = {
             variantId: null,
-            type: "received",
             quantity: 3,
-            reason: "Purchase order TEST-123",
             version: 0,
             requestId: randomUUID(),
           };
@@ -1859,8 +1972,7 @@ test(
             (
               await call(s.admin, path, "POST", {
                 ...body,
-                type: "loss",
-                quantity: 100,
+                quantity: -100,
                 version: 1,
                 requestId: randomUUID(),
               })
@@ -1871,7 +1983,6 @@ test(
             (
               await call(s.admin, path, "POST", {
                 ...body,
-                type: "correction",
                 quantity: -2,
                 version: 1,
                 requestId: randomUUID(),
@@ -1883,7 +1994,8 @@ test(
           const log = await StockAdjustment.findOne({
             requestId: body.requestId,
           });
-          assert.equal(String(log.adminId), s.admin.id);
+          assert.equal(log.adminId, undefined);
+          assert.equal(log.reason, undefined);
           assert.equal(log.before, 10);
           assert.equal(log.after, 13);
           assert.ok(log.createdAt);
@@ -1933,7 +2045,7 @@ test(
             400,
           );
           const csv = await fetch(origin + "/admin/inventory/export", {
-            headers: { Cookie: AUTH_COOKIE_NAME + "=" + createToken(s.admin) },
+            headers: { Cookie: AUTH_COOKIE_NAME + "=" + createLoginToken(s.admin) },
           });
           assert.equal(csv.status, 200);
           assert.match(csv.headers.get("content-type"), /text\/csv/);
@@ -1944,7 +2056,7 @@ test(
           ]) {
             const response = await fetch(origin + url, {
               headers: {
-                Cookie: AUTH_COOKIE_NAME + "=" + createToken(s.admin),
+                Cookie: AUTH_COOKIE_NAME + "=" + createLoginToken(s.admin),
               },
             });
             assert.equal(response.status, 200);
@@ -2232,75 +2344,11 @@ test(
           assert.equal((await Coupon.findById(legacyId)).__v, 1);
         },
       );
-      await t.test(
-        "store settings persist, reject stale writes and control checkout without altering saved orders",
-        async () => {
-          const s = await seed();
-          assert.equal((await call(s.customer, "/admin/settings")).status, 403);
-          const initial = await call(s.admin, "/admin/settings");
-          assert.equal(initial.status, 200);
-          assert.equal(await StoreSettings.countDocuments(), 0);
-          const body = {
-            ...initial.body.data.settings,
-            storeName: "Invoice Fixture",
-            shippingChargePaise: 1200,
-            freeShippingAbovePaise: null,
-            taxBasisPoints: 1800,
-          };
-          const saved = await call(s.admin, "/admin/settings", "PATCH", body);
-          assert.equal(saved.status, 200, JSON.stringify(saved.body));
-          assert.equal(saved.body.data.settings.freeShippingAbovePaise, null);
-          assert.equal(
-            (await call(s.admin, "/admin/settings", "PATCH", body)).status,
-            409,
-          );
-          const quote = await call(s.customer, "/orders/preview", "POST", {
-            addressId: String(s.addressId),
-          });
-          assert.equal(quote.body.data.totalAmount, 13000);
-          const placed = await call(s.customer, "/orders", "POST", {
-            ...s.body,
-            expectedTotalPaise: 13000,
-          });
-          assert.equal(placed.status, 201, JSON.stringify(placed.body));
-          const id = placed.body.data.order.id;
-          assert.equal(
-            (await Order.findById(id)).storeSnapshot.storeName,
-            "Invoice Fixture",
-          );
-          assert.equal(
-            (
-              await call(s.admin, "/admin/settings", "PATCH", {
-                ...body,
-                version: 1,
-                codEnabled: false,
-              })
-            ).status,
-            200,
-          );
-          const replay = await call(s.customer, "/orders", "POST", {
-            ...s.body,
-            expectedTotalPaise: 13000,
-          });
-          assert.equal(replay.status, 200);
-          assert.equal(replay.body.data.order.totalAmount, 13000);
-          await ShoppingList.updateOne(
-            { userId: s.userId },
-            { $set: { cart: [{ productId: s.productId, quantity: 1 }] } },
-          );
-          assert.equal(
-            (
-              await call(s.customer, "/orders", "POST", {
-                ...s.body,
-                requestId: randomUUID(),
-                expectedTotalPaise: 13000,
-              })
-            ).status,
-            409,
-          );
-          assert.equal((await Product.findById(s.productId)).stock, 9);
-        },
-      );
+      await t.test("removed store settings endpoints return 404", async () => {
+        const s = await seed();
+        assert.equal((await call(s.admin, "/admin/settings")).status, 404);
+        assert.equal((await call(s.admin, "/admin/settings", "PATCH", {})).status, 404);
+      });
       await t.test(
         "campaign management drives transactional offers, coupon calculation, stale total rollback and stock restoration",
         async () => {
@@ -2470,7 +2518,7 @@ test(
             origin + "/admin/reports/sales/export" + query,
             {
               headers: {
-                Cookie: `${AUTH_COOKIE_NAME}=${createToken(s.admin)}`,
+                Cookie: `${AUTH_COOKIE_NAME}=${createLoginToken(s.admin)}`,
               },
             },
           );
@@ -2491,55 +2539,6 @@ test(
           });
         },
       );
-      if (process.env.NORTHSTAR_POSTMAN)
-        await t.test(
-          "Postman collection exercises the live local app and isolated database",
-          async () => {
-            const s = await seed();
-            const collection = fileURLToPath(
-              new URL(
-                "../../postman/northstar-orders.postman_collection.json",
-                import.meta.url,
-              ),
-            );
-            const args = [
-              "collection",
-              "run",
-              collection,
-              "--no-report-events",
-              "--env-var",
-              `baseUrl=${origin}`,
-              "--env-var",
-              `customerCookie=${AUTH_COOKIE_NAME}=${createToken(s.customer)}`,
-              "--env-var",
-              `adminCookie=${AUTH_COOKIE_NAME}=${createToken(s.admin)}`,
-              "--env-var",
-              `addressId=${s.addressId}`,
-              "--env-var",
-              `productId=${s.productId}`,
-              "--env-var",
-              `requestId=${randomUUID()}`,
-            ];
-            const result = await new Promise((resolve, reject) => {
-              const child = spawn(
-                process.platform === "win32" ? "postman.exe" : "postman",
-                args,
-                { windowsHide: true },
-              );
-              let output = "";
-              child.stdout.on("data", (b) => {
-                output += b;
-              });
-              child.stderr.on("data", (b) => {
-                output += b;
-              });
-              child.on("error", reject);
-              child.on("close", (code) => resolve({ code, output }));
-            });
-            assert.equal(result.code, 0, result.output);
-            assert.equal(await Order.countDocuments(), 1);
-          },
-        );
       if (process.env.RAZORPAY_TEST_URL)
         await t.test(
           "Razorpay HTTP simulation: setup, retry, signature and captured-payment confirmation",
@@ -2601,78 +2600,14 @@ test(
             assert.equal(verified.body.data.order.paymentStatus, "paid");
             assert.equal(verified.body.data.order.orderStatus, "confirmed");
             assert.equal((await Product.findById(s.productId)).stock, 9);
-            process.env.RAZORPAY_WEBHOOK_SECRET = "webhook-fixture-only";
-            const event = JSON.stringify({
-              entity: "event",
-              event: "payment.captured",
-              payload: {
-                payment: {
-                  entity: {
-                    id: "pay_fixture",
-                    order_id: gatewayId,
-                    amount: 15000,
-                    currency: "INR",
-                    status: "captured",
-                  },
-                },
-              },
-            });
-            const webhookSignature = createHmac(
-              "sha256",
-              process.env.RAZORPAY_WEBHOOK_SECRET,
-            )
-              .update(event)
-              .digest("hex");
-            const webhook = (signature) =>
-              fetch(origin + "/payments/razorpay/webhook", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-razorpay-signature": signature,
-                },
-                body: event,
-              });
-            assert.equal((await webhook("0".repeat(64))).status, 400);
-            const version = (await Order.findById(id)).__v;
-            assert.equal((await webhook(webhookSignature)).status, 200);
-            assert.equal((await webhook(webhookSignature)).status, 200);
-            assert.equal((await Order.findById(id)).__v, version);
-            // A delayed failure event cannot overwrite a captured payment.
-            const failureData = JSON.parse(event);
-            failureData.event = "payment.failed";
-            failureData.payload.payment.entity.status = "failed";
-            failureData.payload.payment.entity.id = "pay_failedattempt";
-            const failure = JSON.stringify(failureData);
-            await fetch(origin + "/payments/razorpay/webhook", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-razorpay-signature": createHmac(
-                  "sha256",
-                  process.env.RAZORPAY_WEBHOOK_SECRET,
-                )
-                  .update(failure)
-                  .digest("hex"),
-              },
-              body: failure,
-            });
-            assert.equal((await Order.findById(id)).paymentStatus, "paid");
             assert.equal(
               (await call(s.customer, `/orders/${id}/cancel`, "POST", {}))
                 .status,
               200,
             );
             assert.equal((await Product.findById(s.productId)).stock, 10);
-            await fetch(process.env.RAZORPAY_TEST_URL + "/__control", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ dropRefundResponse: true }),
-            });
-            assert.equal(
-              (await call(s.admin, `/admin/orders/${id}/refund`, "POST", {}))
-                .status,
-              503,
-            );
+            assert.equal((await User.findById(s.userId).select("+walletBalancePaise")).walletBalancePaise, 15000);
+            assert.equal(await WalletTransaction.countDocuments({ orderId: id, operation: "refund" }), 1);
             const refunded = await call(
               s.admin,
               `/admin/orders/${id}/refund`,
@@ -2745,6 +2680,13 @@ test(
             assert.equal(late.status, 200);
             assert.equal(late.body.data.order.orderStatus, "cancelled");
             assert.equal(late.body.data.order.refund.status, "pending");
+            await control({ dropRefundResponse: true });
+            const lostRefund = await call(s.admin, "/admin/orders/" + id + "/refund", "POST", {});
+            assert.equal(lostRefund.status, 503, JSON.stringify(lostRefund.body));
+            const refundRetry = await call(s.admin, "/admin/orders/" + id + "/refund", "POST", {});
+            assert.equal(refundRetry.status, 200, JSON.stringify(refundRetry.body));
+            assert.equal(refundRetry.body.data.order.refund.status, "completed");
+            assert.equal(await WalletTransaction.countDocuments({ orderId: id }), 0);
             assert.equal((await Product.findById(s.productId)).stock, 10);
             s = await seed();
             placed = await call(s.customer, "/orders", "POST", {
@@ -2786,7 +2728,6 @@ test(
           const s = await seed();
           process.env.RAZORPAY_KEY_ID = "rzp_test_fixture";
           process.env.RAZORPAY_KEY_SECRET = "fixture-only-secret";
-          process.env.RAZORPAY_WEBHOOK_SECRET = "webhook-fixture-only";
           await provider("/__control", {});
           const placed = await call(s.customer, "/orders", "POST", {
             ...s.body,
@@ -2819,23 +2760,6 @@ test(
             razorpay_order_id: s.gatewayId,
             razorpay_payment_id: "pay_fixture",
             razorpay_signature: signature,
-          });
-        }
-        async function signed(event, eventId = randomUUID()) {
-          const body = JSON.stringify(event);
-          return fetch(origin + "/payments/razorpay/webhook", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-razorpay-event-id": eventId,
-              "x-razorpay-signature": createHmac(
-                "sha256",
-                process.env.RAZORPAY_WEBHOOK_SECRET,
-              )
-                .update(body)
-                .digest("hex"),
-            },
-            body,
           });
         }
         await t.test("failed online payment switches to COD on the same order, replay does not adjust stock", async () => {
@@ -2897,12 +2821,9 @@ test(
           assert.equal(await WalletTransaction.countDocuments(),0);
           assert.equal((await Product.findById(s.productId)).stock,9);
         });
-        await t.test("COD disabled, gateway outage and cancelled orders cannot switch methods", async () => {
+        await t.test("gateway outage and cancelled orders cannot switch methods", async () => {
           const s=await online();
           const path="/orders/"+s.id+"/payment-method";
-          await StoreSettings.updateOne({_id:"northstar"},{$set:{codEnabled:false}},{upsert:true});
-          assert.equal((await call(s.customer,path,"POST",{paymentMethod:"cod"})).status,409);
-          await StoreSettings.updateOne({_id:"northstar"},{$set:{codEnabled:true}});
           const originalProvider=process.env.RAZORPAY_TEST_URL;
           process.env.RAZORPAY_TEST_URL="http://127.0.0.1:1";
           let failure;
@@ -3138,91 +3059,7 @@ test(
           },
         );
         await t.test(
-          "webhooks capture authorized payments, deduplicate event IDs, reject malformed payloads and reconcile paid orders",
-          async () => {
-            const s = await online();
-            await provider("/__capture", {
-              orderId: s.gatewayId,
-              status: "authorized",
-            });
-            const payment = {
-              id: "pay_fixture",
-              order_id: s.gatewayId,
-              amount: 15000,
-              currency: "INR",
-              status: "authorized",
-            };
-            const event = {
-                entity: "event",
-                event: "payment.authorized",
-                payload: { payment: { entity: payment } },
-              },
-              eventId = randomUUID();
-            assert.equal((await signed(event, eventId)).status, 200);
-            const order = await Order.findById(s.id);
-            assert.equal(order.paymentStatus, "paid");
-            assert.equal((await signed(event, eventId)).status, 200);
-            assert.equal((await Order.findById(s.id)).__v, order.__v);
-            assert.equal(
-              await PaymentWebhookReceipt.countDocuments({
-                _id: `event:${eventId}`,
-              }),
-              1,
-            );
-            assert.equal(
-              (await signed({ ...event, event: "ignored.event" }, eventId))
-                .status,
-              400,
-            );
-            assert.equal((await signed(null)).status, 400);
-            const paidEvent = {
-              entity: "event",
-              event: "order.paid",
-              payload: {
-                order: { entity: { id: s.gatewayId, status: "paid" } },
-              },
-            };
-            assert.equal((await signed(paidEvent)).status, 200);
-            assert.equal(
-              (await Order.findById(s.id)).paymentHistory.filter(
-                (e) => e.status === "paid",
-              ).length,
-              1,
-            );
-            await call(s.customer, `/orders/${s.id}/cancel`, "POST", {});
-            const refund = {
-              id: "rfnd_webhookfixture",
-              payment_id: "pay_fixture",
-              amount: 15000,
-              currency: "INR",
-              status: "processed",
-            };
-            const refundEvent = {
-              entity: "event",
-              event: "refund.processed",
-              payload: { refund: { entity: refund } },
-            };
-            assert.equal((await signed(refundEvent)).status, 200);
-            assert.equal(
-              (await Order.findById(s.id)).paymentStatus,
-              "refunded",
-            );
-            refund.status = "failed";
-            refundEvent.event = "refund.failed";
-            assert.equal((await signed(refundEvent)).status, 200);
-            assert.equal(
-              (await Order.findById(s.id)).refund.status,
-              "completed",
-            );
-            assert.equal(
-              (await call(s.customer, `/orders/${s.id}/payment`, "POST", {}))
-                .status,
-              409,
-            );
-          },
-        );
-        await t.test(
-          "lost setup responses can recover from a signed capture event without opening another payable order",
+          "lost setup responses recover through customer-requested payment reconciliation",
           async () => {
             const s = await seed();
             process.env.RAZORPAY_KEY_ID = "rzp_test_fixture";
@@ -3243,22 +3080,8 @@ test(
             assert.ok(remote);
             assert.equal((await Order.findById(id)).razorpayOrderId, undefined);
             await provider("/__capture", { orderId: remote.id });
-            const event = {
-              entity: "event",
-              event: "payment.captured",
-              payload: {
-                payment: {
-                  entity: {
-                    id: "pay_fixture",
-                    order_id: remote.id,
-                    amount: 15000,
-                    currency: "INR",
-                    status: "captured",
-                  },
-                },
-              },
-            };
-            assert.equal((await signed(event)).status, 200);
+            const reconciled = await call(s.customer, `/orders/${id}/payment/reconcile`, "POST", {});
+            assert.equal(reconciled.status, 200, JSON.stringify(reconciled.body));
             const order = await Order.findById(id);
             assert.equal(order.razorpayOrderId, remote.id);
             assert.equal(order.paymentStatus, "paid");

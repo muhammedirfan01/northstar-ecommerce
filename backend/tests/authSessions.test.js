@@ -1,8 +1,8 @@
 import test, { afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
-import User from "../models/User.js";
-import { createToken } from "../utils/jwt.js";
-import { requireAuth } from "../middlewares/auth.js";
+import User from "../src/models/User.js";
+import { createLoginToken } from "../src/utils/jwt.js";
+import { requireAuth } from "../src/middlewares/auth.js";
 process.env.JWT_SECRET = "session-test-only-secret-with-at-least-32-characters";
 afterEach(() => mock.restoreAll());
 const account = {
@@ -21,7 +21,7 @@ async function authenticate(tokenAccount, currentAccount) {
     continued = false;
   const req = {
     cookies: {
-      "northstar.token": createToken(tokenAccount),
+      "northstar.token": createLoginToken(tokenAccount),
     },
   };
   const res = {

@@ -1,4 +1,4 @@
-import { CategoryStatus, ProductStatusLabel } from "../../../constants/statuses.js";
+import { CategoryStatus, ProductStatusLabel } from "../../../status/statuses.js";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Plus, Search, X } from "lucide-react";

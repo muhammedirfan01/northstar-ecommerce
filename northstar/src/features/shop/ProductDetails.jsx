@@ -3,10 +3,10 @@ import { Link, useNavigate, useParams } from "react-router";
 import { Heart, ShoppingBag } from "lucide-react";
 import API from "../../api/API.js";
 import ShopProductCard from "./ShopProductCard.jsx";
-import ImageZoom from "./ImageZoom.jsx";
 import ProductImageMagnifier from "./ProductImageMagnifier.jsx";
 import ProductVariantOptions from "./ProductVariantOptions.jsx";
 import { selectedVariant } from "../../utils/variants.js";
+import { offerLabel, selectedOffer } from "../../utils/offers.js";
 import { money } from "../../utils/money.js";
 import "./product-details.css";
 export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist }) {
@@ -18,7 +18,6 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
   const [variantId, setVariantId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [imageIndex, setImageIndex] = useState(0);
-  const [zoom, setZoom] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reload, setReload] = useState(0);
   useEffect(() => {
@@ -46,7 +45,6 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
                 ),
           );
           setNotice("");
-          setZoom(false);
         }
       } catch (error) {
         if (controller.signal.aborted) {
@@ -87,6 +85,7 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
   }
   const { product, related } = data;
   const variant = product.variants.find((item) => item.id === variantId);
+  const offer = selectedOffer(product, variant);
   const price = variant?.pricePaise ?? product.pricePaise;
   let regularPrice;
   if (variant) {
@@ -164,8 +163,8 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
               {product.badge && (
                 <span className="pd-badge">{product.badge}</span>
               )}
-              {discount > 0 && (
-                <span className="pd-badge pd-sale">{discount}% off</span>
+              {(offer || discount > 0) && (
+                <span className="pd-badge pd-sale">{offer ? offerLabel(offer) : `${discount}% off`}</span>
               )}
               <span className="pd-image-count">
                 {gallery.length} product{" "}
@@ -176,7 +175,6 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
               key={image.url}
               image={image}
               productName={product.name}
-              onEnlarge={() => setZoom(true)}
             />
             <button
               className="pd-save"
@@ -234,11 +232,12 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
                 <>
                   <del>{money(regularPrice)}</del>
                   <span className="pd-saving">
-                    Save {money(regularPrice - price)} ({discount}% off)
+                    Total savings {money(regularPrice - price)}{!offer && ` (${discount}% off)`}
                   </span>
                 </>
               )}
             </div>
+            {offer && <p className="shop-feedback">{offer.name}: {offerLabel(offer)} · applied automatically</p>}
             {product.priceNote && !/demo[ -]?price/i.test(product.priceNote) && <p>{product.priceNote}</p>}
           </div>
           {product.variants.length > 0 && (
@@ -293,7 +292,7 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
               disabled={busy || !maxQuantity}
               onClick={() => act("buy")}
             >
-              Buy now{discount > 0 ? ` with ${discount}% off` : ""}
+              Buy now{offer ? ` · ${offerLabel(offer)}` : discount > 0 ? ` with ${discount}% off` : ""}
             </button>
           </div>
           <p className="shop-help">
@@ -371,7 +370,6 @@ export default function ProductDetails({ wishlistIds, addToCart, toggleWishlist 
           </div>
         </section>
       )}
-      {zoom && <ImageZoom image={image} onClose={() => setZoom(false)} />}
     </main>
   );
 }

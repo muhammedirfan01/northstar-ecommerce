@@ -1,20 +1,21 @@
 import test, { afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
-import User from "../models/User.js";
-import RegistrationOtp from "../models/RegistrationOtp.js";
-import mailer from "../config/mailer.js";
-import { register } from "../controllers/registrationController.js";
+import User from "../src/models/User.js";
+import RegistrationOtp from "../src/models/RegistrationOtp.js";
+import mailer from "../src/config/mailer.js";
+import { register } from "../src/controllers/registrationController.js";
 import {
   verifyRegistration as verifyController,
   resendRegistrationOtp as resendController,
-} from "../controllers/registrationOtpController.js";
+} from "../src/controllers/registrationOtpController.js";
 import { controllerData } from "./controllerTestHelpers.js";
-import { hashOtp } from "../utils/otp.js";
-import { checkProfileDetails } from "../utils/validators/profile.js";
-import { checkRegistration } from "../utils/validators/registration.js";
-import { publicUser, requirePasswordAccount } from "../middlewares/auth.js";
-import { otpTiming } from "../../northstar/src/utils/otpTiming.js";
+import { hashOtp } from "../src/utils/otp.js";
+import { validateProfileForm } from "../src/services/profileService.js";
+import { validateRegistrationForm } from "../src/services/registrationService.js";
+import { formatUser, requirePasswordAccount } from "../src/middlewares/auth.js";
+import { otpTiming } from "../../northstar/src/features/auth/otpTiming.js";
 import { nameError } from "../../northstar/src/utils/nameValidation.js";
+
 const registerAccount = (body) =>
   controllerData(register, {
     body: {
@@ -202,14 +203,14 @@ test("profile and signup reject invalid names and accept international names", (
   for (const name of ["  ", "12345", "A1", "---", "A", "<script>"]) {
     assert.ok(nameError(name));
     assert.equal(
-      validate(checkProfileDetails, {
+      validate(validateProfileForm, {
         name,
         phone: "",
       }),
       false,
     );
     assert.equal(
-      validate(checkRegistration, {
+      validate(validateRegistrationForm, {
         name,
         email: "asha@example.com",
         password: "Password8",
@@ -228,7 +229,7 @@ test("profile and signup reject invalid names and accept international names", (
   ]) {
     assert.equal(nameError(name), "");
     assert.equal(
-      validate(checkProfileDetails, {
+      validate(validateProfileForm, {
         name,
         phone: "",
       }),
@@ -237,13 +238,13 @@ test("profile and signup reject invalid names and accept international names", (
   }
 });
 test("Google account flag is public while the Google id stays private", () => {
-  const result = publicUser({
+  const result = formatUser({
     googleId: "private-google-id",
   });
   assert.equal(result.isGoogleAccount, true);
   assert.equal(result.googleId, undefined);
   assert.equal(
-    publicUser({
+    formatUser({
       passwordHash: "hash",
     }).isGoogleAccount,
     false,

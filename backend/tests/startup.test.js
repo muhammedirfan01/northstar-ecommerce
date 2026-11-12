@@ -20,7 +20,7 @@ test("server startup loads its .env before connecting and reading the port", asy
   const require = createRequire(import.meta.url);
   const moduleURL = (text) =>
     "data:text/javascript;base64," + Buffer.from(text).toString("base64");
-  const serverFile = fileURLToPath(new URL("../server.js", import.meta.url));
+  const serverFile = fileURLToPath(new URL("../src/server.js", import.meta.url));
   let source = await readFile(serverFile, "utf8");
   source = source.replace(
     '"dotenv/config"',

@@ -1,4 +1,4 @@
-import { AccountStatus } from "../../constants/statuses.js";
+import { AccountStatus } from "../../status/statuses.js";
 import { Navigate, Outlet, useLocation } from "react-router";
 export default function RequireSignedIn({ user, status, error, refreshUser }) {
   const location = useLocation();

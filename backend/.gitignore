@@ -1,4 +1,10 @@
-node_modules
 .env
-tests/results/
 .env.*
+
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.log
+
+tests/results/

@@ -3,13 +3,12 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import Order from "../models/order.js";
-import { settle, startPayment } from "../services/paymentService.js";
+import Order from "../src/models/Order.js";
+import { recordConfirmedPayment, startPayment } from "../src/services/paymentService.js";
 import {
-  paymentConfigured,
-  validSignature,
-} from "../services/razorpayService.js";
-import { receiveWebhook } from "../services/paymentWebhookService.js";
+  isOnlinePaymentReady,
+  isValidPaymentSignature,
+} from "../src/services/razorpayService.js";
 
 afterEach(() => mock.restoreAll());
 const order = () => ({
@@ -213,7 +212,7 @@ test("verified capture that races with cancellation remains cancelled and create
     assert.equal(update.$set.refund.amount, 15000);
     return { ...order(), ...update.$set };
   });
-  const result = await settle(order(), payment());
+  const result = await recordConfirmedPayment(order(), payment());
   assert.equal(calls, 2);
   assert.equal(result.orderStatus, "cancelled");
   assert.equal(result.paymentStatus, "paid");
@@ -227,13 +226,13 @@ test("capture replay is read-only and a different captured payment cannot replac
     paymentStatus: "paid",
     razorpayPaymentId: "pay_fixture",
   };
-  assert.equal(await settle(paid, payment()), paid);
+  assert.equal(await recordConfirmedPayment(paid, payment()), paid);
   await assert.rejects(
-    settle(paid, { ...payment(), id: "pay_other" }),
+    recordConfirmedPayment(paid, { ...payment(), id: "pay_other" }),
     (error) => error.status === 409,
   );
   assert.equal(
-    await settle({ ...paid, paymentStatus: "refunded" }, payment()).then(
+    await recordConfirmedPayment({ ...paid, paymentStatus: "refunded" }, payment()).then(
       (value) => value.paymentStatus,
     ),
     "refunded",
@@ -251,7 +250,7 @@ test("capture rejects a mismatched payment identity, amount, currency or unconfi
     { status: "authorized" },
   ])
     await assert.rejects(
-      settle(order(), { ...payment(), ...invalid }),
+      recordConfirmedPayment(order(), { ...payment(), ...invalid }),
       (error) => error.status === 409,
     );
 });
@@ -261,24 +260,27 @@ test("payment config and signatures reject empty keys and malformed or tampered 
   try {
     process.env.RAZORPAY_KEY_ID = " ";
     process.env.RAZORPAY_KEY_SECRET = " ";
-    assert.equal(paymentConfigured(), false);
+    assert.equal(isOnlinePaymentReady(), false);
     process.env.RAZORPAY_KEY_ID = " rzp_test_fixture ";
     process.env.RAZORPAY_KEY_SECRET = " fixture-only-secret ";
-    assert.equal(paymentConfigured(), true);
+    assert.equal(isOnlinePaymentReady(), true);
+    process.env.RAZORPAY_KEY_ID = "rzp_live_fixture";
+    assert.equal(isOnlinePaymentReady(), false);
+    process.env.RAZORPAY_KEY_ID = "rzp_test_fixture";
     const signature = createHmac("sha256", "fixture-only-secret")
       .update("order_fixture|pay_fixture")
       .digest("hex");
     assert.equal(
-      validSignature("order_fixture", "pay_fixture", signature),
+      isValidPaymentSignature("order_fixture", "pay_fixture", signature),
       true,
     );
     for (const value of [undefined, "abc", "0".repeat(64), "z".repeat(64)])
       assert.equal(
-        validSignature("order_fixture", "pay_fixture", value),
+        isValidPaymentSignature("order_fixture", "pay_fixture", value),
         false,
       );
     assert.equal(
-      validSignature("order_other", "pay_fixture", signature),
+      isValidPaymentSignature("order_other", "pay_fixture", signature),
       false,
     );
   } finally {
@@ -286,31 +288,5 @@ test("payment config and signatures reject empty keys and malformed or tampered 
       if (before[index] === undefined) delete process.env[key];
       else process.env[key] = before[index];
     });
-  }
-});
-test("signed malformed webhook JSON is rejected before database access", async () => {
-  const before = process.env.RAZORPAY_WEBHOOK_SECRET;
-  try {
-    process.env.RAZORPAY_WEBHOOK_SECRET = "webhook-fixture-only";
-    for (const value of ["null", "[]", "{}", "not-json"]) {
-      const body = Buffer.from(value);
-      const signature = createHmac(
-        "sha256",
-        process.env.RAZORPAY_WEBHOOK_SECRET,
-      )
-        .update(body)
-        .digest("hex");
-      await assert.rejects(
-        receiveWebhook({ body, signature }),
-        (error) => error.status === 400,
-      );
-    }
-    await assert.rejects(
-      receiveWebhook({ body: Buffer.from("{}"), signature: "0".repeat(64) }),
-      (error) => error.status === 400,
-    );
-  } finally {
-    if (before === undefined) delete process.env.RAZORPAY_WEBHOOK_SECRET;
-    else process.env.RAZORPAY_WEBHOOK_SECRET = before;
   }
 });

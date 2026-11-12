@@ -4,8 +4,8 @@ import { Writable } from "node:stream";
 import express from "express";
 import sharp from "sharp";
 import { v2 as cloudinary } from "cloudinary";
-import Category from "../models/Category.js";
-import catalogAdminRoutes from "../routes/catalogAdminRoutes.js";
+import Category from "../src/models/Category.js";
+import adminCatalogRoutes from "../src/routes/adminCatalogRoutes.js";
 const parentId = "111111111111111111111111";
 const valid = {
   name: "Laptops",
@@ -22,7 +22,7 @@ test("admin add-category request", async (t) => {
     };
     next();
   });
-  app.use("/admin", catalogAdminRoutes);
+  app.use("/admin", adminCatalogRoutes);
   app.use((error, _req, res, _next) => {
     res.status(error.status || 500).json({
       success: false,

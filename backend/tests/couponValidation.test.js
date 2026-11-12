@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { couponForm, couponQuery } from "../utils/validators/coupon.js";
-import { couponStatus, couponFilter } from "../services/adminCouponService.js";
+import { validateCouponForm, validateCouponFilters, getCouponStatus, getCouponFilter } from "../src/services/adminCouponService.js";
+
 const form = () => ({
   code: " northstar10 ",
   discountType: "percentage",
@@ -14,13 +14,13 @@ const form = () => ({
   isActive: true,
 });
 test("coupon forms preserve existing percentage/paise semantics and normalize only the code", () => {
-  const value = couponForm(form());
+  const value = validateCouponForm(form());
   assert.equal(value.code, "NORTHSTAR10");
   assert.equal(value.discountValue, 10);
   assert.equal(value.minPurchasePaise, 10000);
   assert.equal(value.maxDiscountPaise, 5000);
   assert.equal(
-    couponForm({ ...form(), discountType: "fixed", discountValue: 5000 })
+    validateCouponForm({ ...form(), discountType: "fixed", discountValue: 5000 })
       .discountValue,
     5000,
   );
@@ -40,13 +40,13 @@ test("coupon forms reject forged usage, unsafe money, invalid percentages, limit
     { code: "BAD CODE" },
   ])
     assert.throws(
-      () => couponForm({ ...form(), ...changes }),
+      () => validateCouponForm({ ...form(), ...changes }),
       (error) => error.status === 400,
     );
-  assert.throws(() => couponForm({ ...form(), version: -1 }, true));
+  assert.throws(() => validateCouponForm({ ...form(), version: -1 }, true));
 });
 test("coupon queries escape code searches and reject unsupported filters/sorts", () => {
-  const query = couponQuery({
+  const query = validateCouponFilters({
     search: "CODE.*",
     status: "active",
     sort: "code",
@@ -54,7 +54,7 @@ test("coupon queries escape code searches and reject unsupported filters/sorts",
     limit: "5",
   });
   assert.equal(query.page, 2);
-  assert.equal(couponFilter(query).code.$regex, "CODE\\.\\*");
+  assert.equal(getCouponFilter(query).code.$regex, "CODE\\.\\*");
   for (const value of [
     { sort: "price" },
     { status: "hidden" },
@@ -63,23 +63,23 @@ test("coupon queries escape code searches and reject unsupported filters/sorts",
     { usedCount: "9" },
   ])
     assert.throws(
-      () => couponQuery(value),
+      () => validateCouponFilters(value),
       (error) => error.status === 400,
     );
 });
 test("coupon status respects deletion, enable setting, dates and recorded quota", () => {
   const now = new Date("2026-06-01T00:00:00Z"),
     base = { ...form(), usedCount: 1 };
-  assert.equal(couponStatus(base, now), "active");
-  assert.equal(couponStatus({ ...base, deletedAt: now }, now), "deleted");
-  assert.equal(couponStatus({ ...base, isActive: false }, now), "inactive");
+  assert.equal(getCouponStatus(base, now), "active");
+  assert.equal(getCouponStatus({ ...base, deletedAt: now }, now), "deleted");
+  assert.equal(getCouponStatus({ ...base, isActive: false }, now), "inactive");
   assert.equal(
-    couponStatus({ ...base, expiryDate: "2026-05-01" }, now),
+    getCouponStatus({ ...base, expiryDate: "2026-05-01" }, now),
     "expired",
   );
-  assert.equal(couponStatus({ ...base, usageLimit: 1 }, now), "exhausted");
+  assert.equal(getCouponStatus({ ...base, usageLimit: 1 }, now), "exhausted");
   assert.equal(
-    couponStatus({ ...base, startDate: "2026-07-01" }, now),
+    getCouponStatus({ ...base, startDate: "2026-07-01" }, now),
     "scheduled",
   );
 });

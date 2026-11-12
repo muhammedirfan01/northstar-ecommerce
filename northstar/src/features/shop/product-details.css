@@ -26,7 +26,7 @@
   padding: 0;
   border: 0;
   background: white;
-  cursor: zoom-in;
+  cursor: default;
 }
 .pd-main-image img {
   display: block;
@@ -36,7 +36,7 @@
   object-fit: contain;
 }
 .pd-main-image > .pd-zoom-hint {
-  display: block;
+  display: none;
   padding: 12px 0 0;
   color: #8a8a83;
   font-size: 11px;
@@ -47,7 +47,7 @@
 .pd-image-stage {
   display: block;
   position: relative;
-  cursor: crosshair;
+  cursor: default;
 }
 .pd-magnifier-lens {
   position: absolute;
@@ -77,15 +77,12 @@
   max-width: none;
   max-height: none;
 }
-.pd-hover-hint {
-  display: none;
-}
 @media (min-width: 901px) and (hover: hover) and (pointer: fine) {
-  .pd-hover-hint {
-    display: inline;
+  .pd-main-image > .pd-zoom-hint {
+    display: block;
   }
-  .pd-touch-hint {
-    display: none;
+  .pd-image-stage {
+    cursor: crosshair;
   }
 }
 @media (max-width: 1000px) {
@@ -97,9 +94,6 @@
   .pd-magnifier-preview,
   .pd-magnifier-lens {
     display: none;
-  }
-  .pd-image-stage {
-    cursor: zoom-in;
   }
 }
 .pd-badges {

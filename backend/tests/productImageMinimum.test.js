@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import Product from '../models/Product.js';
-import Category from '../models/Category.js';
-import { saveProduct } from '../services/productService.js';
+import Product from "../src/models/Product.js";
+import Category from "../src/models/Category.js";
+import { saveProduct } from "../src/services/productService.js";
 
 const id='111111111111111111111111';
 const body={name:'Image product',description:'A product with enough detail.',categoryId:id,price:'100',stock:'2',isPublished:false,isListed:true,highlights:[],specifications:[],retainedImageIds:[]};
@@ -31,9 +31,9 @@ test('editing counts retained images and new uploads together and validates owne
   const product=new Product({name:body.name,description:body.description,category:id,pricePaise:10000,stock:2,images:images(3)});
   t.mock.method(Product,'findById',async()=>product);
   const retainedImageIds=product.images.slice(0,2).map(image=>String(image._id));
-  await assert.rejects(saveProduct({params:{id},body:{...body,retainedImageIds},files:[]}),/between 3 and 6 images/);
-  await assert.rejects(saveProduct({params:{id},body:{...body,retainedImageIds},files:invalidFiles(1)}),/not a valid JPG/);
-  await assert.rejects(saveProduct({params:{id},body:{...body,retainedImageIds:[id]},files:invalidFiles(2)}),/does not belong to this product/);
+  await assert.rejects(saveProduct({params:{id},body:{...body,version:0,retainedImageIds},files:[]}),/between 3 and 6 images/);
+  await assert.rejects(saveProduct({params:{id},body:{...body,version:0,retainedImageIds},files:invalidFiles(1)}),/not a valid JPG/);
+  await assert.rejects(saveProduct({params:{id},body:{...body,version:0,retainedImageIds:[id]},files:invalidFiles(2)}),/does not belong to this product/);
 });
 for(const count of [3,6]) {
   test(`editing saves a valid gallery of ${count} retained images`,async(t)=>{
@@ -43,7 +43,7 @@ for(const count of [3,6]) {
     let writes=0;
     t.mock.method(product,'save',async()=>{await product.validate();writes++;return product;});
     t.mock.method(product,'populate',async()=>product);
-    const result=await saveProduct({params:{id},body:{...body,retainedImageIds:product.images.map(image=>String(image._id))},files:[]});
+    const result=await saveProduct({params:{id},body:{...body,version:0,retainedImageIds:product.images.map(image=>String(image._id))},files:[]});
     assert.equal(result.status,200);assert.equal(writes,1);assert.equal(result.body.data.product.images.length,count);
   });
 }

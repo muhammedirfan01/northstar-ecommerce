@@ -6,6 +6,7 @@ import {
   variantImage,
   variantConfiguration,
 } from "../../utils/variants.js";
+import { offerLabel, selectedOffer } from "../../utils/offers.js";
 import { money } from "../../utils/money.js";
 import "./shop.css";
 export default function ShopProductCard({ product, wishlistIds, addToCart, toggleWishlist }) {
@@ -14,6 +15,7 @@ export default function ShopProductCard({ product, wishlistIds, addToCart, toggl
   const navigate = useNavigate();
   const available = product.available !== false;
   const variant = selectedVariant(product);
+  const offer = selectedOffer(product, variant);
   const price = variant?.pricePaise ?? product.pricePaise;
   let regularPrice;
   if (variant) {
@@ -50,14 +52,9 @@ export default function ShopProductCard({ product, wishlistIds, addToCart, toggl
         </Link>
         <div className="pd-card-badges">
           {product.badge && <span>{product.badge}</span>}
-          {available && product.regularPricePaise > product.pricePaise && (
+          {available && (offer || regularPrice > price) && (
             <span className="pd-card-sale">
-              {Math.round(
-                ((product.regularPricePaise - product.pricePaise) /
-                  product.regularPricePaise) *
-                  100,
-              )}
-              % off
+              {offer ? offerLabel(offer) : Math.round(((regularPrice - price) / regularPrice) * 100) + "% off"}
             </span>
           )}
         </div>
@@ -91,7 +88,7 @@ export default function ShopProductCard({ product, wishlistIds, addToCart, toggl
         {available ? (
           <>
             {money(price)}{" "}
-            {product.regularPricePaise > product.pricePaise && (
+            {regularPrice > price && (
               <del>{money(regularPrice)}</del>
             )}
           </>
@@ -99,6 +96,7 @@ export default function ShopProductCard({ product, wishlistIds, addToCart, toggl
           "Currently unavailable"
         )}
       </p>
+      {offer && <p className="shop-feedback">{offer.name} applied</p>}
       <button
         className="shop-primary"
         type="button"

@@ -1,13 +1,13 @@
-import { checkProductInput } from "../utils/validators/product.js";
-import { checkVariantInput } from "../utils/validators/variant.js";
+import { validateProductForm } from "../src/services/productService.js";
+import { validateVariantForm, validateVariantOptions } from "../src/services/variantService.js";
 import { validationCase } from "./controllerTestHelpers.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import Product from "../models/Product.js";
-import { validateVariantOptions } from "../utils/variantOptions.js";
-import { publicProduct } from "../utils/product.js";
-const productSchema = validationCase(checkProductInput);
-const variantSchema = validationCase(checkVariantInput);
+import Product from "../src/models/Product.js";
+import { formatAdminProduct } from "../src/services/catalogService.js";
+
+const productSchema = validationCase(validateProductForm);
+const variantSchema = validationCase(validateVariantForm);
 const imageId = "111111111111111111111111";
 const productInput = {
   name: "Laptop",
@@ -228,7 +228,7 @@ test("public product data includes editable presentation and variant option fiel
       },
     ],
   });
-  const output = publicProduct(product);
+  const output = formatAdminProduct(product);
   assert.equal(output.variants[0].colorHex, "#222222");
   assert.equal(output.variants[0].imageId, imageId);
   assert.equal(output.quickSpecs[0].value, "Retina");

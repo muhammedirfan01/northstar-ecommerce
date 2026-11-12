@@ -1,4 +1,5 @@
 import { Package, Check, Truck } from "lucide-react";
+import { offerLabel } from "../../utils/offers.js";
 import { money } from "../../utils/money.js";
 import { titleCase, orderDate } from "./purchaseData.js";
 
@@ -48,13 +49,20 @@ export function PriceSummary({ order }) {
       <dd>{money(order.subtotal)}</dd>
       <dt>Delivery</dt>
       <dd>{order.shippingCharge ? money(order.shippingCharge) : "FREE"}</dd>
-      <dt>Discount{order.offerDiscount > 0 ? " (offers + coupon)" : ""}</dt>
-      <dd className="purchase-green">−{money(order.discount)}</dd>
+      <dt>Campaign savings</dt>
+      <dd className="purchase-green">−{money(order.offerDiscount || 0)}</dd>
+      <dt>Coupon savings</dt>
+      <dd className="purchase-green">−{money(order.couponDiscount ?? Math.max(0, order.discount - (order.offerDiscount || 0)))}</dd>
       {order.appliedOffers?.length > 0 && (
         <>
           <dt>Offers applied</dt>
           <dd>
-            {[...new Set(order.appliedOffers.map((o) => o.name))].join(", ")}
+            {order.appliedOffers.map((offer, index) => (
+              <div key={index}>
+                {offer.name}{offer.discountType && ": " + offerLabel(offer)}
+                {offer.quantity && " × " + offer.quantity} — {money(offer.discount)} saved
+              </div>
+            ))}
           </dd>
         </>
       )}

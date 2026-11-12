@@ -1,4 +1,4 @@
-import { validateProfilePhoto } from "../../utils/profilePhoto.js";
+import { validateProfilePhoto } from "./profilePhoto.js";
 import { nameError } from "../../utils/nameValidation.js";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";

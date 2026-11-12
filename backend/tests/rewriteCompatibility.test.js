@@ -1,35 +1,37 @@
-import { postalDirectory } from "../services/postalService.js";
+import Campaign from "../src/models/Campaign.js";
+import { postalDirectory } from "../src/services/postalService.js";
 import test, { afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
-import User from "../models/User.js";
-import Product from "../models/Product.js";
-import ShoppingList from "../models/ShoppingList.js";
+import User from "../src/models/User.js";
+import Product from "../src/models/Product.js";
+import Order from "../src/models/Order.js";
+import ShoppingList from "../src/models/ShoppingList.js";
 import { OAuth2Client } from "google-auth-library";
-import { googleSignIn } from "../controllers/googleAuthController.js";
+import { googleSignIn } from "../src/controllers/googleAuthController.js";
 import {
   getWishlist,
-  addWish,
-  removeWish,
-} from "../controllers/shoppingController.js";
+  addToWishlist,
+  removeFromWishlist,
+} from "../src/controllers/shoppingController.js";
 import {
   saveVariant,
   deleteVariant,
-} from "../controllers/productController.js";
-import ProfileVerification from "../models/ProfileVerification.js";
-import { startLogin } from "../controllers/loginController.js";
-import { changePassword } from "../controllers/profileSecurityController.js";
-import { getPhoto } from "../controllers/profileController.js";
-import { getCustomerPhoto } from "../controllers/adminController.js";
+} from "../src/controllers/productController.js";
+import ProfileVerification from "../src/models/ProfileVerification.js";
+import { startLogin } from "../src/controllers/loginController.js";
+import { changePassword } from "../src/controllers/profileSecurityController.js";
+import { getPhoto } from "../src/controllers/profileController.js";
+import { getCustomerPhoto } from "../src/controllers/adminController.js";
 import {
   addAddress,
   deleteAddress,
   editAddress,
-} from "../controllers/addressController.js";
-import { hashPassword } from "../utils/password.js";
-import { hashOtp } from "../utils/otp.js";
-import { readToken } from "../utils/jwt.js";
-import { AUTH_COOKIE_NAME } from "../config/jwt.js";
-import createApp from "../app.js";
+} from "../src/controllers/addressController.js";
+import { hashPassword } from "../src/utils/password.js";
+import { hashOtp } from "../src/utils/otp.js";
+import { getLoginData } from "../src/utils/jwt.js";
+import { AUTH_COOKIE_NAME } from "../src/config/jwt.js";
+import createApp from "../src/app.js";
 
 process.env.JWT_SECRET = "rewrite-compatibility-test-secret-32-characters";
 process.env.OTP_SECRET = "ab".repeat(32);
@@ -87,6 +89,7 @@ function response() {
 afterEach(() => mock.restoreAll());
 
 test("wishlist read, add and remove actions preserve results and save only changes", async () => {
+  mock.method(Campaign, "find", () => ({ sort() { return this; }, session() { return this; }, lean: async () => [] }));
   const product = {
     _id: firstId,
     name: "Sample product",
@@ -120,13 +123,13 @@ test("wishlist read, add and remove actions preserve results and save only chang
   mock.method(Product, "findById", () => ({ populate: async () => product }));
   mock.method(Product, "find", () => ({ populate: async () => [product] }));
   const added = response();
-  await addWish({ user: account, body: { productId: firstId } }, added);
+  await addToWishlist({ user: account, body: { productId: firstId } }, added);
   assert.equal(added.body.data.products[0].id, firstId);
   const current = response();
   await getWishlist({ user: account }, current);
   assert.equal(current.body.data.products.length, 1);
   const removed = response();
-  await removeWish({ user: account, params: { id: firstId } }, removed);
+  await removeFromWishlist({ user: account, params: { id: firstId } }, removed);
   assert.deepEqual(removed.body.data.products, []);
   assert.equal(saves, 2);
 });
@@ -147,12 +150,14 @@ test("variant image validation, editing and deletion preserve price, stock and t
   mock.method(product, "save", async () => product);
   mock.method(product, "populate", async () => product);
   await assert.rejects(saveVariant({ params: { id: String(product._id) }, files: [], body: { name: "Small", price: "120", regularPrice: "150", stock: "3", isListed: true } }, response()), /at least three images/);
+  mock.method(Order, "exists", async () => null);
   const created = response();
   await saveVariant(
     {
       params: { id: String(product._id), variantId: String(product.variants[0]._id) },
       files: [],
       body: {
+        version: 0,
         name: "Large",
         options: [{ name: "Size", value: "Large" }],
         colorHex: "",
@@ -212,6 +217,10 @@ test("rewritten app starts and preserves health, missing-route and validation re
     assert.equal(health.status, 200);
     assert.equal((await health.json()).success, true);
     assert.equal((await fetch(base + "/does-not-exist")).status, 404);
+    const removedPaymentRoute = await fetch(base + "/api/payments/razorpay/webhook", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    });
+    assert.equal(removedPaymentRoute.status, 404);
     const invalid = await fetch(base + "/api/products?page=0");
     assert.equal(invalid.status, 400);
     assert.equal((await invalid.json()).message, "Invalid page.");
@@ -234,7 +243,7 @@ test("login service result becomes the same public response and signed cookie", 
   assert.equal(res.body.data.user.passwordHash, undefined);
   assert.equal(res.cookies.length, 1);
   assert.equal(res.cookies[0].options.httpOnly, true);
-  const token = readToken({
+  const token = getLoginData({
     cookies: { [AUTH_COOKIE_NAME]: res.cookies[0].value },
   });
   assert.equal(token.userId, id);
@@ -291,7 +300,7 @@ test("verified password change refreshes the cookie using the new session counte
   );
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.data.verified, true);
-  const token = readToken({
+  const token = getLoginData({
     cookies: { [AUTH_COOKIE_NAME]: res.cookies[0].value },
   });
   assert.equal(token.authVersion, 3);
@@ -374,7 +383,7 @@ test("address version conflicts reject without writing to the database", async (
           fullName: "Asha Devi",
           phoneNumber: "9876543210",
           addressLine1: "123 Main Street",
-          city: "Kochi",
+          city: "Ernakulam",
           state: "Kerala",
           postalCode: "682001",
         },
@@ -387,7 +396,7 @@ test("address version conflicts reject without writing to the database", async (
 });
 
 test("first address becomes default and the save atomically checks version zero", async () => {
-  mock.method(postalDirectory, "lookup", async () => ({ state: "Kerala", districts: ["Ernakulam"], cities: ["Kochi", "Ernakulam"] }));
+  mock.method(postalDirectory, "lookup", async () => ({ state: "Kerala", districts: ["Ernakulam"], states: ["Kerala"] }));
   const user = { ...account, addresses: [], defaultAddressId: null };
   mock.method(User, "findById", () => lean(user));
   let filter;
@@ -406,7 +415,7 @@ test("first address becomes default and the save atomically checks version zero"
         fullName: "Asha Devi",
         phoneNumber: "9876543210",
         addressLine1: "123 Main Street",
-        city: "Kochi",
+        city: "Ernakulam",
         state: "Kerala",
         postalCode: "682001",
       },
@@ -459,7 +468,7 @@ test("editing another address ID is rejected without saving", async () => {
           fullName: "Asha Devi",
           phoneNumber: "9876543210",
           addressLine1: "123 Main Street",
-          city: "Kochi",
+          city: "Ernakulam",
           state: "Kerala",
           postalCode: "682001",
         },

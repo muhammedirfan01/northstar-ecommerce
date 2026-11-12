@@ -205,30 +205,6 @@
   background: #202722;
   color: white;
 }
-.shop-zoom {
-  width: min(1000px, 95vw);
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-.shop-zoom::backdrop {
-  background: #0009;
-}
-.shop-zoom-tools {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 15px;
-}
-.shop-zoom-tools label {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-}
-.shop-zoom-scroll {
-  max-height: 70dvh;
-  overflow: auto;
-}
 .shop-page button:disabled,
 .shop-product-card button:disabled {
   opacity: 0.45;

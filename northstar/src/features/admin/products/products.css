@@ -46,3 +46,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+.products-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+.products-actions .catalog-primary {
+  white-space: nowrap;
+}

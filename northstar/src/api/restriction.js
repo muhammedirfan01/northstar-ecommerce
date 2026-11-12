@@ -1,4 +1,4 @@
-import { RestrictionCode } from '../constants/statuses.js';
+import { RestrictionCode } from '../status/statuses.js';
 export function restrictionMessage(failure) {
   return Object.values(RestrictionCode).includes(failure.response?.data?.code)
     ? failure.response.data.message || 'Your account is restricted. Please contact support.' : '';

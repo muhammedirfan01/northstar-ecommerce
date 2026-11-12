@@ -1,0 +1,16 @@
+import noCache from "../middlewares/noCache.js";
+import { shoppingLimiter } from "../middlewares/rateLimiters.js";
+import { Router } from "express";
+import { requireAuth, requireCustomer } from "../middlewares/auth.js";
+import * as shopping from "../controllers/shoppingController.js";
+const router = Router();
+router.use(noCache);
+router.use(["/cart", "/wishlist"], requireAuth, requireCustomer);
+router.get("/cart", shopping.getCart);
+router.post("/cart", shoppingLimiter, shopping.addToCart);
+router.patch("/cart/:id", shoppingLimiter, shopping.updateCartItem);
+router.delete("/cart/:id", shoppingLimiter, shopping.removeCartItem);
+router.get("/wishlist", shopping.getWishlist);
+router.post("/wishlist", shoppingLimiter, shopping.addToWishlist);
+router.delete("/wishlist/:id", shoppingLimiter, shopping.removeFromWishlist);
+export default router;

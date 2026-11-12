@@ -7,8 +7,7 @@ function StockDialog({ product, close, saved }) {
   const [variantId, setVariantId] = useState(product.variants[0]?.id || "");
   const option =
     product.variants.find((variant) => variant.id === variantId) || product;
-  const [stock, setStock] = useState(option.stock),
-    [reason, setReason] = useState("");
+  const [stock, setStock] = useState(option.stock);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const [requestId] = useState(() => crypto.randomUUID());
@@ -21,9 +20,7 @@ function StockDialog({ product, close, saved }) {
     try {
       await API.post(`/admin/inventory/${product.id}/adjustments`, {
         variantId: variantId || null,
-        type: "correction",
         quantity: nextStock - option.stock,
-        reason: reason.trim() || "Stock count updated",
         version: product.version,
         requestId,
       });
@@ -89,17 +86,6 @@ function StockDialog({ product, close, saved }) {
               : `${nextStock > option.stock ? "Increase" : "Decrease"} by ${Math.abs(nextStock - option.stock)} units`
             : "Enter a whole quantity of zero or more."}
         </p>
-        <label>
-          Reason (optional)
-          <input
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            disabled={busy}
-            maxLength={300}
-            placeholder="For example, new stock received"
-            minLength={3}
-          />
-        </label>
         {error && (
           <p role="alert" className="ops-error">
             {error}

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { Writable } from "node:stream";
 import sharp from "sharp";
 import { v2 as cloudinary } from "cloudinary";
-import User from "../models/User.js";
-import { updateProfile } from "../services/profileService.js";
+import User from "../src/models/User.js";
+import { updateProfile } from "../src/services/profileService.js";
 
 afterEach(() => mock.restoreAll());
 const user = {

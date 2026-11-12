@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ShoppingBag, ArrowRight, Trash2, Minus, Plus } from "lucide-react";
 import API from "../../api/API.js";
+import { offerLabel } from "../../utils/offers.js";
 import { money } from "../../utils/money.js";
 export default function Cart({ updateCart }) {
   const [cart, setCart] = useState(null);
@@ -124,6 +125,7 @@ export default function Cart({ updateCart }) {
                       <del>{money(item.regularPricePaise)}</del>
                     )}
                   </p>
+                  {item.offer && <p className="cart-savings">{item.offer.name}: {offerLabel(item.offer)} · Save {money(item.offer.discountPaise * item.quantity)} for {item.quantity} {item.quantity === 1 ? "unit" : "units"}</p>}
                   {item.error && <p className="shop-error">{item.error}</p>}
                   <div className="cart-item-controls">
                     <div className="shop-quantity">
@@ -179,7 +181,7 @@ export default function Cart({ updateCart }) {
             </p>
             {savings > 0 && (
               <p className="cart-savings">
-                <span>Product savings</span>
+                <span>Total product savings (including offers)</span>
                 <strong>−{money(savings)}</strong>
               </p>
             )}

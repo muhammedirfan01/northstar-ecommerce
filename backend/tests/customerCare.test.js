@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import {
   postalDirectory,
+  lookupIndiaPincode,
   validatePostalAddress,
-  normalizedState,
-} from "../services/postalService.js";
-import { sendMessage } from "../services/supportService.js";
+  normalizeStateName,
+} from "../src/services/postalService.js";
+import { sendMessage } from "../src/services/supportService.js";
 
 test("postal directory uses HTTP; validates missing PINs, city mismatches and upstream failure", async () => {
   const originalEnv = process.env.NODE_ENV;
@@ -60,21 +61,21 @@ test("postal directory uses HTTP; validates missing PINs, city mismatches and up
     assert.deepEqual(location, {
       state: "Kerala",
       districts: ["Ernakulam"],
-      cities: ["Kochi", "Ernakulam"],
+      states: ["Kerala"],
     });
     await postalDirectory.lookup("682001");
     assert.equal(requests, 1, "Successful lookup should be cached");
     const details = {
       postalCode: "682001",
       state: "KERALA",
-      city: "Fort Kochi",
+      city: "Ernakulam",
     };
     await validatePostalAddress(details);
     assert.equal(details.state, "Kerala");
     assert.equal(
       details.city,
-      "Fort Kochi",
-      "Do not replace locality with district",
+      "Ernakulam",
+      "Preserve the API-provided district",
     );
     await assert.rejects(
       validatePostalAddress({
@@ -91,8 +92,10 @@ test("postal directory uses HTTP; validates missing PINs, city mismatches and up
     const correctCity = {
       postalCode: "682001",
       state: "Tamil Nadu",
-      city: "Cochin",
+      city: " ernakulam ",
     };
+    await assert.rejects(validatePostalAddress({ ...correctCity, city: "Cochin" }), { status: 400 });
+    assert.deepEqual(await lookupIndiaPincode("682001"), { states: ["Kerala"], districts: ["Ernakulam"] });
     await validatePostalAddress(correctCity);
     assert.equal(
       correctCity.state,
@@ -101,6 +104,7 @@ test("postal directory uses HTTP; validates missing PINs, city mismatches and up
     );
     mode = "missing";
     await assert.rejects(postalDirectory.lookup("999999"), { status: 400 });
+    assert.equal(await lookupIndiaPincode("999999"), null);
     mode = "unavailable";
     await assert.rejects(postalDirectory.lookup("682002"), { status: 503 });
     mode = "success";
@@ -111,7 +115,7 @@ test("postal directory uses HTTP; validates missing PINs, city mismatches and up
     );
     mode = "malformed";
     await assert.rejects(postalDirectory.lookup("682003"), { status: 503 });
-    assert.equal(normalizedState("Orissa"), normalizedState("Odisha"));
+    assert.equal(normalizeStateName("Orissa"), normalizeStateName("Odisha"));
   } finally {
     if (originalEnv === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = originalEnv;

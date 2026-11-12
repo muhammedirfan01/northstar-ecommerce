@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
 import { randomUUID } from "node:crypto";
-import Order from "../models/order.js";
-import { salesReport } from "../services/salesReportService.js";
+import Order from "../src/models/Order.js";
+import { salesReport } from "../src/services/salesReportService.js";
 
 test(
   "sales summary, refunds, product ranking and pagination use the entire period",
