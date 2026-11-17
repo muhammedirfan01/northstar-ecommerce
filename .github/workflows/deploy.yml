@@ -1,0 +1,107 @@
+name: Deploy NORTHSTAR to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: northstar-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+      - name: Run backend tests
+        run: npm test
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: northstar
+      - name: Check frontend build
+        run: npm run build
+        working-directory: northstar
+        env:
+          VITE_API_URL: /api
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Configure SSH and verify server identity
+        env:
+          DEPLOY_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" || { echo 'Add the EC2_SSH_KEY repository secret first.'; exit 1; }
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/northstar
+          chmod 600 ~/.ssh/northstar
+          ssh-keyscan -T 15 -t ed25519 13.127.65.156 > ~/.ssh/ec2-host-key
+          actual=$(ssh-keygen -lf ~/.ssh/ec2-host-key -E sha256 | awk '{print $2}')
+          test "$actual" = 'SHA256:bXmoLbd0q0/fznXbuztddyTLEHVpVIA8ZibWt9kK18w'
+          cat ~/.ssh/ec2-host-key >> ~/.ssh/known_hosts
+      - name: Deploy tested commit
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/northstar -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 ubuntu@13.127.65.156 bash -s -- "$DEPLOY_SHA" <<'DEPLOY'
+          set -eo pipefail
+          target="$1"
+          source "$HOME/.nvm/nvm.sh"
+          nvm use 24
+          exec 9>"$HOME/.northstar-deploy.lock"
+          flock -w 120 9
+          cd "$HOME/northstar-ecommerce"
+          test -f backend/.env
+          test -f northstar/.env.production
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$target" ]; then
+            echo 'A newer push exists; its workflow will deploy it.'
+            exit 0
+          fi
+          # Preserve the original server-side audit fix only if GitHub has the same file.
+          changed=$(git diff --name-only HEAD)
+          if [ "$changed" = 'backend/package-lock.json' ]; then
+            git show "$target:backend/package-lock.json" | cmp - backend/package-lock.json
+            git stash push -m 'Preserve initial AWS dependency fix' -- backend/package-lock.json
+          fi
+          test -z "$(git status --porcelain --untracked-files=no)" || { echo 'Server has tracked changes; refusing to overwrite them.'; exit 1; }
+          git merge --ff-only "$target"
+          cd northstar
+          npm ci
+          npm run build
+          sudo -n nginx -t
+          cd ../backend
+          npm ci
+          pm2 restart northstar-api --update-env
+          curl -fsS --retry 10 --retry-all-errors --retry-delay 3 --max-time 10 http://127.0.0.1:5000/api/health
+          sudo -n mkdir -p /var/www/northstar-backups
+          sudo -n cp -a /var/www/northstar "/var/www/northstar-backups/before-$target-$(date +%s)"
+          sudo -n cp -r ../northstar/dist/. /var/www/northstar/
+          pm2 save
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 3 --max-time 15 https://northstar-shop.duckdns.org/api/health
+          echo "Deployed $target"
+          DEPLOY
+      - name: Remove temporary SSH key
+        if: always()
+        run: rm -f ~/.ssh/northstar
