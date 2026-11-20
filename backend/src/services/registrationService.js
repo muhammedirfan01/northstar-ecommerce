@@ -107,14 +107,30 @@ function getRegistrationTimes(
 }
 
 export function validateRegistrationForm(formData) {
-  validateFormFields(formData, ["name", "email", "password", "acceptedTerms"]);
+  validateFormFields(formData, [
+    "name",
+    "email",
+    "password",
+    "confirmPassword",
+    "acceptedTerms",
+  ]);
   const invalidName = getNameError(formData.name);
   if (invalidName) throw createValidationError(invalidName, "name");
   const name = formData.name.trim();
   const email = validateEmail(formData.email);
   const password = validatePassword(formData.password, "password");
+  const { confirmPassword } = formData;
+  if (typeof confirmPassword !== "string" || confirmPassword.length === 0) {
+    throw createValidationError("Confirm your password.", "confirmPassword");
+  }
+  if (confirmPassword !== password) {
+    throw createValidationError("Passwords do not match.", "confirmPassword");
+  }
   if (formData.acceptedTerms !== true) {
-    throw createValidationError("Invalid acceptedTerms.", "acceptedTerms");
+    throw createValidationError(
+      "Agree to the Terms & Conditions and Privacy Policy to create an account.",
+      "acceptedTerms",
+    );
   }
   return {
     name,

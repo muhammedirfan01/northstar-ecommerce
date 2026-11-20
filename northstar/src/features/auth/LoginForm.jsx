@@ -32,7 +32,7 @@ export default function LoginForm({
     <>
       <GoogleSignInButton busy={busy} setBusy={setBusy} onSuccess={onSuccess} />
       <div className="auth-divider">OR CONTINUE WITH EMAIL</div>
-      <form className="auth-form" onSubmit={login} aria-busy={busy}>
+      <form className="auth-form" onSubmit={login} aria-busy={busy} noValidate>
         <div className="auth-field">
           <label htmlFor="login-email">Email Address</label>
           <input
@@ -40,21 +40,18 @@ export default function LoginForm({
             name="email"
             type="email"
             autoComplete="email"
-            maxLength={254}
+            placeholder="you@example.com"
             required
             disabled={busy}
           />
         </div>
         <div className="auth-field">
-          <label htmlFor="login-password">
-            Password (at least 8 characters)
-          </label>
+          <label htmlFor="login-password">Password</label>
           <PasswordInput
             id="login-password"
             name="password"
             autoComplete="current-password"
-            minLength={8}
-            maxLength={128}
+            placeholder="Enter your password"
             required
             disabled={busy}
           />

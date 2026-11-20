@@ -74,15 +74,3 @@ export function requireCustomer(req, res, next) {
   }
   next();
 }
-
-export function requireAddressCustomer(req, res, next) {
-  if (req.user.role !== "customer") {
-    return res
-      .status(403)
-      .json({
-        success: false,
-        message: "Address management is available for customer accounts.",
-      });
-  }
-  next();
-}

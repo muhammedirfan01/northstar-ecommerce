@@ -157,6 +157,39 @@ test(
         });
         return { status: response.status, body: await response.json() };
       }
+      await t.test("a zero-total COD order consumes stock and coupon usage only once on retry", async () => {
+        const s = await seed();
+        await Product.updateOne({ _id: s.productId }, { $set: { pricePaise: 60000 } });
+        const coupon = await Coupon.create({
+          code: "FREE100",
+          discountType: "percentage",
+          discountValue: 100,
+          usageLimit: 1,
+          startDate: new Date(Date.now() - 60_000),
+          expiryDate: new Date(Date.now() + 60_000),
+        });
+        const preview = await call(s.customer, "/orders/preview", "POST", {
+          addressId: s.body.addressId,
+          couponCode: coupon.code,
+        });
+        assert.equal(preview.status, 200, JSON.stringify(preview.body));
+        assert.equal(preview.body.data.totalAmount, 0);
+
+        const body = { ...s.body, couponCode: coupon.code, expectedTotalPaise: 0 };
+        const placed = await call(s.customer, "/orders", "POST", body);
+        assert.equal(placed.status, 201, JSON.stringify(placed.body));
+        const order = placed.body.data.order;
+        assert.equal(order.totalAmount, 0);
+        assert.equal(order.orderStatus, "confirmed");
+
+        const replay = await call(s.customer, "/orders", "POST", body);
+        assert.equal(replay.status, 200, JSON.stringify(replay.body));
+        assert.equal(replay.body.data.order.id, order.id);
+        assert.equal(await Order.countDocuments({ userId: s.userId }), 1);
+        assert.equal((await Product.findById(s.productId)).stock, 9);
+        assert.equal((await Coupon.findById(coupon.id)).usedCount, 1);
+        assert.equal((await ShoppingList.findOne({ userId: s.userId })).cart.length, 0);
+      });
       await t.test("product forms reject stock changed by checkout and accept a refreshed version", async () => {
         const s = await seed();
         const images = [1, 2, 3].map(n => ({ _id: oid(), publicId: "fixture/" + n, url: "https://example.test/" + n }));

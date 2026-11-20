@@ -19,6 +19,8 @@ import { validateCartItem } from "../utils/shoppingValidation.js";
 import { validateFormFields } from "../utils/formValidation.js";
 import { createValidationError } from "../utils/validation.js";
 
+const RAZORPAY_MINIMUM_PAISE = 100;
+
 // Hash the checkout details so a retry can be compared with the first request.
 function createCheckoutHash(body) {
   return createHash("sha256")
@@ -74,7 +76,7 @@ export async function previewOrder(requestData) {
         paymentMethods: {
           wallet: (user.walletBalancePaise ?? 0) >= quote.totalAmount,
           cod: true,
-          razorpay: isOnlinePaymentReady(),
+          razorpay: isOnlinePaymentReady() && quote.totalAmount >= RAZORPAY_MINIMUM_PAISE,
         },
       },
     },
@@ -131,7 +133,7 @@ export async function placeOrder(requestData) {
       const draft = result.checkout;
       if (draft.totalAmount !== body.expectedTotalPaise)
         throw createError("Prices changed. Review your order again.", 409);
-      if (body.paymentMethod === "razorpay" && draft.totalAmount < 100)
+      if (body.paymentMethod === "razorpay" && draft.totalAmount < RAZORPAY_MINIMUM_PAISE)
         throw createError(
           "Online payment requires at least ₹1. Choose cash on delivery.",
           400,

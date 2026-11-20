@@ -21,6 +21,7 @@ const registerAccount = (body) =>
     body: {
       name: "Asha Devi",
       password: "Password8",
+      confirmPassword: "Password8",
       acceptedTerms: true,
       ...body,
     },
@@ -47,6 +48,20 @@ test("registration returns a usable expiry without disclosing an existing email"
   assert.match(result.challengeId, /^[a-f0-9]{24}$/);
   assert.equal(result.expiresIn, 300);
   assert.ok(otpTiming(result).expiresAt > Date.now());
+});
+test("registration rejects missing or mismatched password confirmation before looking up the account", async () => {
+  const lookup = mock.method(User, "exists", async () => true);
+  for (const [confirmPassword, message] of [
+    [undefined, "Confirm your password."],
+    ["", "Confirm your password."],
+    ["Password8 ", "Passwords do not match."],
+  ]) {
+    await assert.rejects(
+      registerAccount({ email: "customer@example.com", confirmPassword }),
+      { status: 400, field: "confirmPassword", message },
+    );
+  }
+  assert.equal(lookup.mock.callCount(), 0);
 });
 test("new registration stores a hash, emails a code and returns its actual expiry", async () => {
   mock.method(User, "exists", async () => false);
@@ -214,6 +229,7 @@ test("profile and signup reject invalid names and accept international names", (
         name,
         email: "asha@example.com",
         password: "Password8",
+        confirmPassword: "Password8",
         acceptedTerms: true,
       }),
       false,

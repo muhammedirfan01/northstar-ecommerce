@@ -19,9 +19,6 @@ export default function Addresses({ user }) {
   const [deleting, setDeleting] = useState(null);
   const [reload, setReload] = useState(0);
   useEffect(() => {
-    if (user.role !== "customer") {
-      return;
-    }
     const controller = new AbortController();
     async function loadAddresses() {
       try {
@@ -44,7 +41,7 @@ export default function Addresses({ user }) {
     }
     loadAddresses();
     return () => controller.abort();
-  }, [reload, user.role]);
+  }, [reload]);
   function reloadAddresses() {
     setLoading(true);
     setError("");
@@ -124,15 +121,6 @@ export default function Addresses({ user }) {
     } finally {
       setSaving(false);
     }
-  }
-  if (user.role !== "customer") {
-    return (
-      <main className="addresses-page">
-        <h1>Saved Addresses</h1>
-        <p>Saved addresses are available for customer accounts.</p>
-        <Link to="/admin">Back to dashboard</Link>
-      </main>
-    );
   }
   const full = data.addresses.length >= data.maxAddresses;
   const disabled = loading || saving || Boolean(deleting);

@@ -1,10 +1,12 @@
 import "dotenv/config";
+import dns from "node:dns";
 import connectDB from "./config/db.js";
 import mongoose from "mongoose";
 import createApp from "./app.js";
 const port = Number(process.env.PORT) || 5000;
 export default async function startServer() {
   try {
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
     await connectDB();
     const app = createApp();
     const server = app.listen(port, () => {
@@ -17,6 +19,7 @@ export default async function startServer() {
     });
   } catch (error) {
     console.error("error occured.reason is:" + error.message);
+    console.dir(error.reason, { depth: 5 });
     process.exitCode = 1;
     await mongoose.disconnect();
   }
